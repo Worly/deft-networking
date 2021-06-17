@@ -141,7 +141,7 @@ namespace DeftUnitTests
         [TestMethod]
         public async Task WhenTimeout_ShouldExecuteOnCorrectThread()
         {
-            var port = 5000;
+            var port = 5002;
             var clientListener = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
