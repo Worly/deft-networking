@@ -89,8 +89,7 @@ namespace DeftUnitTests
             action.Should()
                 .Throw<FailedToConnectException>()
                 .Where(o => o.Reason == FailedToConnectException.FailReason.UNKNOWN_HOSTNAME)
-                .WithInnerException<SocketException>()
-                .And.SocketErrorCode.Should().Be(SocketError.HostNotFound);
+                .WithInnerException<SocketException>();
         }
 
         [TestMethod]
