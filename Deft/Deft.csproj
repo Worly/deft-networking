@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Version>0.0.2</Version>
+    <Authors>Worly</Authors>
+    <Company>Canvas</Company>
+    <Product>DeftNetworking</Product>
+    <PackageId>DeftNetworking</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

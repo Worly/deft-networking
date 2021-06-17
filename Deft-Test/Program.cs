@@ -36,7 +36,7 @@ namespace Deft_Test
                         {
                             Message = "Hello " + req.Body.Name
                         };
-                    });
+                    }, ThreadOptions.ExecuteAsync);
 
                 new Thread(() =>
                 {
@@ -84,7 +84,7 @@ namespace Deft_Test
                 s.SendMethod<TestArgs, TestResponse>("slow", new TestArgs() { Name = "Tino" }, null, r =>
                 {
                     Console.WriteLine("IN RESPONSE CurrentThread: " + Thread.CurrentThread.ManagedThreadId + " with status code " + r.StatusCode);
-                });
+                }, ThreadOptions.ExecuteAsync);
 
 
                 //s.Disconnect();
