@@ -118,14 +118,12 @@ namespace Deft
                 {
                     var socketException = e as SocketException;
 
-                    Console.WriteLine(socketException.SocketErrorCode);
-
                     if (e is FailedToConnectException)
                     {
                         Logger.LogError(e.ToString());
                         throw;
                     }
-                    if (e is SocketException && socketException.SocketErrorCode == SocketError.HostNotFound)
+                    if (e is SocketException && (socketException.SocketErrorCode == SocketError.HostNotFound || socketException.SocketErrorCode == SocketError.TryAgain))
                     {
                         Logger.LogError($"Could not reslove hostname, see exception: " + e.ToString());
                         throw new FailedToConnectException(null, FailedToConnectException.FailReason.UNKNOWN_HOSTNAME, e);
