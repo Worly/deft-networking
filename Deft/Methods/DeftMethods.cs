@@ -12,7 +12,7 @@ namespace Deft
 
         private static uint sendingMethodIndex = 0;
 
-        private static Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
+        private static readonly Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
 
         public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
             string methodRoute,
@@ -57,13 +57,12 @@ namespace Deft
 
             Action<ResponseStatusCode, Dictionary<string, string>, object> callback = (statusCode, headers, body) =>
             {
-                if (onResponseCallback != null)
-                    onResponseCallback(new DeftResponse<TResponse>()
-                    {
-                        StatusCode = statusCode,
-                        Headers = headers,
-                        Body = body != null ? (TResponse)body : default(TResponse)
-                    });
+                onResponseCallback?.Invoke(new DeftResponse<TResponse>()
+                {
+                    StatusCode = statusCode,
+                    Headers = headers,
+                    Body = body != null ? (TResponse)body : default
+                });
             };
             var deftSentMethod = new DeftSentMethod()
             {

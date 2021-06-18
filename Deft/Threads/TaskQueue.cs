@@ -6,9 +6,10 @@ namespace Deft
 {
     public class TaskQueue : IDisposable, ITaskQueue
     {
-        object locker = new object();
+        readonly object locker = new object();
         public Thread Thread { get; private set; }
-        Queue<Action> taskQ = new Queue<Action>();
+
+        readonly Queue<Action> taskQ = new Queue<Action>();
 
         public TaskQueue()
         {

@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Deft.Utils
 {
-    internal class ByteBuffer : IDisposable
+    internal class ByteBuffer
     {
-        private FastByteBuffer fastByteBuffer;
+        private readonly FastByteBuffer fastByteBuffer;
 
         public ByteBuffer(int size)
         {
@@ -290,25 +290,6 @@ namespace Deft.Utils
             if (peek)
                 fastByteBuffer.Seek(fastByteBuffer.GetPosition() + length + 1); // +1 for termination char
             return ret;
-        }
-
-        private bool disposedValue = false;
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposing)
-            {
-                if (disposing)
-                {
-                }
-                disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         [StructLayout(LayoutKind.Explicit)]
