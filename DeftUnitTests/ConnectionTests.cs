@@ -69,9 +69,7 @@ namespace DeftUnitTests
             });
 
             action.Should()
-                .Throw<FailedToConnectException>()
-                .WithMessage("*TCP timeout*")
-                .And.Reason.Should().Be(FailedToConnectException.FailReason.TCP_TIMEOUT);
+                .Throw<FailedToConnectException>();
         }
 
         [TestMethod]
