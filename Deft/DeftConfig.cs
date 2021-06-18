@@ -10,7 +10,7 @@ namespace Deft
         /// <summary>
         /// Set this to true if you want to receive exception stacktrace of exceptions thrown in RouteHandlers, <br/>
         /// Stacktrace will be sent in headers under 'exception-stacktrace', <br/>
-        /// Default value is false
+        /// default value is false
         /// </summary>
         public static bool RespondWithExceptionStackTrace { get; set; } = false;
 
