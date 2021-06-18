@@ -24,7 +24,7 @@ jobs:
     - name: Test
       run: dotnet test --verbosity normal
     - name: Publish
-      uses: brandedoutcast/publish-nuget@v2.5.2
+      uses: brandedoutcast/publish-nuget@v2.5.5
       with:
           PROJECT_FILE_PATH: Deft/Deft.csproj
           NUGET_KEY: ${{secrets.NUGET_API_KEY}}
