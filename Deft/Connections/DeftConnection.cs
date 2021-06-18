@@ -116,8 +116,7 @@ namespace Deft
             }
             catch (Exception e)
             {
-                var socketException = e.InnerException as SocketException;
-                if (socketException != null && socketException.SocketErrorCode == SocketError.ConnectionReset)
+                if (e.InnerException is SocketException socketException && socketException.SocketErrorCode == SocketError.ConnectionReset)
                     CloseConnection();
                 else
                     Logger.LogError("Error receiving TCP data, see exception: " + e.ToString());
@@ -140,9 +139,6 @@ namespace Deft
 
                 DeftThread.ExecuteOnDeftThread(() => HandlePackage(packet));
             }
-
-
-            byteBuffer.Dispose();
         }
 
 
@@ -160,8 +156,6 @@ namespace Deft
             var DeftPacket = (DeftPacket)toInvoke;
 
             PacketHandler.Handle(this, DeftPacket, buffer);
-
-            buffer.Dispose();
         }
 
         /// <summary>
@@ -184,7 +178,6 @@ namespace Deft
             var array = buffer.ToArray();
 
             dataStream.BeginWrite(array, 0, array.Length, new AsyncCallback(OnSendDataCompleted), dataStream);
-            buffer.Dispose();
         }
 
         void OnSendDataCompleted(IAsyncResult asyncResult)

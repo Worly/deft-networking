@@ -35,8 +35,7 @@ namespace DeftUnitTests
         public async Task WhenUsingHostName_ShouldResolveHostNameAndConnect()
         {
             int port = 3001;
-
-            var clientListener = new ClientListener(port);
+            _ = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
 
@@ -47,8 +46,7 @@ namespace DeftUnitTests
         public async Task WhenUsingIPString_ShouldCorrectlyParseAndConnect()
         {
             int port = 3002;
-
-            var clientListener = new ClientListener(port);
+            _ = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("127.0.0.1", port, "Server");
 

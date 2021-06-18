@@ -30,9 +30,11 @@ namespace Deft
             
             try
             {
-                var tcpClient = new TcpClient();
-                tcpClient.ReceiveBufferSize = connectionSettings.BufferSize;
-                tcpClient.SendBufferSize = connectionSettings.BufferSize;
+                var tcpClient = new TcpClient
+                {
+                    ReceiveBufferSize = connectionSettings.BufferSize,
+                    SendBufferSize = connectionSettings.BufferSize
+                };
 
 
                 var delayTask = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds);
