@@ -38,10 +38,15 @@ namespace Deft
                 Action task;
                 lock (locker)
                 {
-                    while (taskQ.Count == 0) Monitor.Wait(locker);
+                    while (taskQ.Count == 0)
+                        Monitor.Wait(locker);
                     task = taskQ.Dequeue();
                 }
-                if (task == null) return;         // This signals our exit
+                if (task == null) // This signals our exit
+                {
+                    Logger.LogDebug("TaskQueue found null task, stopping consumer thread");
+                    return;         
+                }
 
                 task.Invoke();
             }

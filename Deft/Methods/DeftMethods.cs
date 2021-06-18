@@ -14,10 +14,10 @@ namespace Deft
 
         private static Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
 
-        public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection, 
-            string methodRoute, 
-            TBody body, Dictionary<string, string> headers = null, 
-            Action<DeftResponse<TResponse>> onResponseCallback = null, 
+        public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
+            string methodRoute,
+            TBody body, Dictionary<string, string> headers = null,
+            Action<DeftResponse<TResponse>> onResponseCallback = null,
             ThreadOptions threadOptions = ThreadOptions.Default)
         {
             if (methodRoute == null)
@@ -104,13 +104,10 @@ namespace Deft
             if (methodRoute == null)
                 throw new ArgumentNullException("methodRoute");
 
-            return Task.Run(() =>
-            {
-                var t = new TaskCompletionSource<DeftResponse<TResponse>>();
-                connection.SendMethod<TBody, TResponse>(methodRoute, body, headers, r => t.TrySetResult(r));
+            var t = new TaskCompletionSource<DeftResponse<TResponse>>();
+            connection.SendMethod<TBody, TResponse>(methodRoute, body, headers, r => t.TrySetResult(r), ThreadOptions.ExecuteAsync);
 
-                return t.Task;
-            });
+            return t.Task;
         }
 
         internal static void Respond(DeftConnection connection, uint methodIndex, ResponseStatusCode statusCode)

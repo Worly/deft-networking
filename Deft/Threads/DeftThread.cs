@@ -33,6 +33,13 @@ namespace Deft
 
             TaskQueue.EnqueueTask(action);
         }
+
+        public static void Join()
+        {
+            if (Thread.CurrentThread == TaskQueue.Thread)
+                Logger.LogWarning("Do not Join() from DeftThread because it will lock DeftThread and break everything");
+            TaskQueue.Thread.Join();
+        }
     }
 
 }
