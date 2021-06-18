@@ -1,4 +1,35 @@
-﻿using System;
+# Deft Networking
+C# library for two way "HTTP like" communication over TCP with session persistence and thread saftey.
+
+# Features
+
+<h3>1. Robust TCP Connection</h3>
+
+ * Initialize ClientListener on server application using `new ClientListener<TClient>(int port)`
+ * Connect to server using `var server = DeftConnector.Connect<TServer>(ip, port, ...)`
+ 
+<h3>2. Session persistence</h3>
+ 
+ * Single session represends instance of `TClient`
+ * `TClient` can implement `OnDisconnected()` and `OnConnected()` events
+ 
+<h3>3. Two way HTTP-like communication</h3>
+
+ * Register route handlers using `DeftMethods.DefaultRouter.Add<TArgs, TResponse>(string route, Func<...> handler)`, supports router nesting
+ * Send request method to any connected Client/Server using `client.SendMethod<TArgs, TResponse>(route, args, headers, onResponseCallback)`
+ * Every request body and headers, and every response has body, headers and status code
+ 
+<h3>4. Thread safety</h3>
+
+ * Choose on which thread request handler are executed using `ThreadOptions`, available options:
+   - `ExecuteAsync` - every new request is executed on new worker thread
+   - 'Default' - you can set your own thread using 'DeftConfig.DefaultRouteHandlerTaskQueue' or use default 'DeftThread'
+ * You can choose thread for response callback the same way
+ 
+# Simple example
+
+```C#
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Deft;
@@ -67,3 +98,7 @@ namespace Deft_Test
         }
     }
 }
+
+```
+ 
+  
