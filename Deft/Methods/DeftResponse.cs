@@ -5,10 +5,10 @@ namespace Deft
 {
     public class DeftResponse<TResponseType>
     {
-        public ResponseStatusCode StatusCode { get; set; }
+        public ResponseStatusCode StatusCode { get; internal set; }
         public bool Ok { get => (int)StatusCode < 400; }
-        public Dictionary<string, string> Headers { get; set; }
-        public TResponseType Body { get; set; }
+        public Dictionary<string, string> Headers { get; internal set; }
+        public TResponseType Body { get; internal set; }
 
         internal DeftResponse() {}
 
@@ -28,6 +28,15 @@ namespace Deft
             {
                 StatusCode = ResponseStatusCode.OK,
                 Headers = headers,
+                Body = body
+            };
+        }
+
+        public static DeftResponse<TResponseType> From(ResponseStatusCode code, TResponseType body = default)
+        {
+            return new DeftResponse<TResponseType>()
+            {
+                StatusCode = code,
                 Body = body
             };
         }
