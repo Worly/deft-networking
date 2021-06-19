@@ -19,6 +19,7 @@ namespace Deft
         private ConcurrentQueue<TcpClient> clientQueue = new ConcurrentQueue<TcpClient>();
 
         public IEnumerable<T> ConnectedClients { get => clients.Where(o => o.IsConnected); }
+        public IEnumerable<T> Clients { get => clients; }
 
         protected TcpListener socket; // Listener for tcp clients
 
