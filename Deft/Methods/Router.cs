@@ -97,6 +97,24 @@ namespace Deft
             return this;
         }
 
+        public Router Add<TBody, TResponse>(string route, Func<DeftConnectionOwner, TBody, TResponse> routeHandler)
+        {
+            if (routeHandler == null)
+                throw new ArgumentNullException("routeHandler");
+
+            Add<TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body));
+            return this;
+        }
+
+        public Router Add<TBody, TResponse>(string route, Func<DeftConnectionOwner, TBody, DeftResponse<TResponse>> routeHandler)
+        {
+            if (routeHandler == null)
+                throw new ArgumentNullException("routeHandler");
+
+            Add<TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body));
+            return this;
+        }
+
         public Router Add<TClient, TBody, TResponse>(string route, Func<TClient, DeftRequest<TBody>, DeftResponse<TResponse>> routeHandler) where TClient : DeftConnectionOwner
         {
             if (routeHandler == null)
@@ -111,6 +129,24 @@ namespace Deft
                 return routeHandler(fromCasted, req);
             });
 
+            return this;
+        }
+
+        public Router Add<TClient, TBody, TResponse>(string route, Func<TClient, TBody, TResponse> routeHandler) where TClient : DeftConnectionOwner
+        {
+            if (routeHandler == null)
+                throw new ArgumentNullException("routeHandler");
+
+            Add<TClient, TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body));
+            return this;
+        }
+
+        public Router Add<TClient, TBody, TResponse>(string route, Func<TClient, TBody, DeftResponse<TResponse>> routeHandler) where TClient : DeftConnectionOwner
+        {
+            if (routeHandler == null)
+                throw new ArgumentNullException("routeHandler");
+
+            Add<TClient, TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body));
             return this;
         }
 
