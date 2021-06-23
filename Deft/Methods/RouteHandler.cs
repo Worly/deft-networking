@@ -11,6 +11,7 @@ namespace Deft
         private Func<DeftConnectionOwner, string, string, DeftResponseDTO> handler;
         private DeftRoute route;
         ThreadOptions threadOptions;
+        private Router parent;
 
         public void Handle(DeftConnectionOwner owner, uint methodIndex, string headersJSON, string bodyJSON)
         {
@@ -33,24 +34,17 @@ namespace Deft
             catch (Exception e)
             {
                 Logger.LogError($"An exception has been thrown while handling request on route {route}, see exception: {e}");
-                DeftMethods.Respond(owner.Connection, methodIndex, new DeftResponseDTO()
-                {
-                    StatusCode = ResponseStatusCode.InternalServerError,
-                    HeadersJSON = JsonConvert.SerializeObject(new Dictionary<string, string>() {
-                                { "exception-type", e.GetType().Name },
-                                { "exception-message", e.Message },
-                                { "exception-stacktrace", DeftConfig.RespondWithExceptionStackTrace ? e.StackTrace : null }
-                            })
-                });
+                parent.HandleException(owner, methodIndex, e);
             }
         }
 
-        public static RouteHandler From<TBody, TResponse>(DeftRoute route, Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> handler, ThreadOptions threadOptions)
+        public static RouteHandler From<TBody, TResponse>(DeftRoute route, Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> handler, ThreadOptions threadOptions, Router parent)
         {
             return new RouteHandler()
             {
                 route = route,
                 threadOptions = threadOptions,
+                parent = parent,
                 handler = (owner, headersJSON, bodyJSON) =>
                 {
                     var deftRequest = new DeftRequest<TBody>();

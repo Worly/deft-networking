@@ -34,6 +34,7 @@ namespace DeftUnitTests
 
             router.Add<ThreadArgs, ThreadResponse>("/async", (from, req) =>
             {
+                _ = req.Body;
                 return DeftResponse<ThreadResponse>.From(new ThreadResponse()
                 {
                     IsDeftThread = DeftThread.TaskQueue.Thread == Thread.CurrentThread,

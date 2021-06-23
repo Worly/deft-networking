@@ -78,6 +78,7 @@ namespace DeftUnitTests
             var nestedRouter = new Router();
             nestedRouter.Add<TestArgs, TestResponse>("route", (from, req) =>
             {
+                _ = req.Body;
                 return DeftResponse<TestResponse>.From(new TestResponse())
                 .WithHeader("route", "/nested/route");
             });
@@ -86,12 +87,14 @@ namespace DeftUnitTests
 
             DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("nested/main", (from, req) =>
             {
+                _ = req.Body;
                 return DeftResponse<TestResponse>.From(new TestResponse())
                 .WithHeader("route", "/nested/main");
             });
 
             nestedRouter.Add<TestArgs, TestResponse>("/", (from, req) =>
             {
+                _ = req.Body;
                 return DeftResponse<TestResponse>.From(new TestResponse())
                 .WithHeader("route", "/nested");
             });
