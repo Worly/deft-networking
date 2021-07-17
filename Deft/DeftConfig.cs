@@ -27,5 +27,7 @@ namespace Deft
         /// default value is DeftThread.TaskQueue
         /// </summary>
         public static ITaskQueue DefaultMethodResponseTaskQueue = DeftThread.TaskQueue;
+
+        public static string ApplicationName = null;
     }
 }
