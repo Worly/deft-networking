@@ -10,7 +10,18 @@ namespace Deft.Utils
     {
         private static string GetFolderPath()
         {
-            return string.Format(@"{0}\{1}\", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Assembly.GetEntryAssembly().GetName().Name);
+            string applicationName = DeftConfig.ApplicationName;
+            if (applicationName == null)
+            {
+                if (Assembly.GetEntryAssembly() == null)
+                {
+                    Logger.LogError("EntryAssembly is null, cannot get application name. Set DeftConfig.ApplicationName to fix this error");
+                    applicationName = "Deft-Unknown";
+                }
+                else
+                    applicationName = Assembly.GetEntryAssembly().GetName().Name;
+            }
+            return string.Format(@"{0}\{1}\", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), applicationName);
         }
 
         public static string GetSettingsPath()

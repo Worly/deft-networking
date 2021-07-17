@@ -21,7 +21,6 @@ namespace Deft
                 Task.Run(action);
             else
                 DeftThread.ExecuteOnSelectedTaskQueue(action, DeftConfig.DefaultRouteHandlerTaskQueue);
-
         }
 
         private void HandleInternal(DeftConnectionOwner owner, uint methodIndex, string headersJSON, string bodyJSON)
