@@ -59,7 +59,7 @@ namespace Deft
             requestDTO.HeadersJSON = byteBuffer.ReadString();
             requestDTO.BodyJSON = byteBuffer.ReadString();
 
-            Logger.LogDebug($"Received Method (index: {requestDTO.MethodIndex}, route: {requestDTO.MethodRoute}) from {connection}");
+            Logger.LogDebug($"Received Method (index: {requestDTO.MethodIndex}, route: {requestDTO.MethodRoute}) from {connection}, headers: {requestDTO.HeadersJSON}, body: {requestDTO.BodyJSON}");
 
             DeftMethods.ReceivedMethod(connection, requestDTO);
         }
@@ -72,7 +72,7 @@ namespace Deft
             responseDTO.HeadersJSON = byteBuffer.ReadString();
             responseDTO.BodyJSON = byteBuffer.ReadString();
 
-            Logger.LogDebug($"Received MethodResponse (index: {responseDTO.MethodIndex}) from {connection}");
+            Logger.LogDebug($"Received MethodResponse (index: {responseDTO.MethodIndex}) from {connection}, status code: {responseDTO.StatusCode}, headers: {responseDTO.HeadersJSON}, body: {responseDTO.BodyJSON}");
 
             DeftMethods.ReceivedResponse(connection, responseDTO);
         }

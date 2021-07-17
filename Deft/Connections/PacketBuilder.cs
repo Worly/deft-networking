@@ -57,7 +57,7 @@ namespace Deft
             byteBuffer.WriteString(requestDTO.HeadersJSON);
             byteBuffer.WriteString(requestDTO.BodyJSON);
 
-            Logger.LogDebug($"Sending Method (index: {requestDTO.MethodIndex}, route: {requestDTO.MethodRoute}) to {connection}");
+            Logger.LogDebug($"Sending Method (index: {requestDTO.MethodIndex}, route: {requestDTO.MethodRoute}) to {connection}, headers: {requestDTO.HeadersJSON}, body: {requestDTO.BodyJSON}");
 
             connection.SendData(byteBuffer.GetBuffer());
         }
@@ -78,7 +78,7 @@ namespace Deft
             byteBuffer.WriteString(responseDTO.HeadersJSON);
             byteBuffer.WriteString(responseDTO.BodyJSON);
 
-            Logger.LogDebug($"Sending MethodResponse (index: {responseDTO.MethodIndex}) to {connection}");
+            Logger.LogDebug($"Sending MethodResponse (index: {responseDTO.MethodIndex}) to {connection}, status code: {responseDTO.StatusCode}, headers: {responseDTO.HeadersJSON}, body: {responseDTO.BodyJSON}");
 
             connection.SendData(byteBuffer.GetBuffer());
         }
