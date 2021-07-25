@@ -28,7 +28,6 @@ namespace Deft
         public void Dispose()
         {
             EnqueueTask(null);
-            Thread.Join();
         }
 
         public void EnqueueTask(Action task)
