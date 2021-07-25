@@ -13,8 +13,16 @@ namespace Deft
 
         public TaskQueue()
         {
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+
             Thread = new Thread(Consume);
             Thread.Start();
+        }
+
+        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+            Dispose();
         }
 
         public void Dispose()
