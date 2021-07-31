@@ -13,20 +13,20 @@ namespace Deft
 
         public TaskQueue()
         {
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            Deft.StopEvent += Deft_Stop;
 
             Thread = new Thread(Consume);
             Thread.Start();
         }
 
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private void Deft_Stop(object sender, EventArgs args)
         {
-            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
             Dispose();
         }
 
         public void Dispose()
         {
+            Deft.StopEvent -= Deft_Stop;
             EnqueueTask(null);
         }
 

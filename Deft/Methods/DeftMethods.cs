@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Deft
@@ -13,6 +14,20 @@ namespace Deft
         private static uint sendingMethodIndex = 0;
 
         private static readonly Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
+
+        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        static DeftMethods()
+        {
+            Deft.StopEvent += Deft_Stop;
+        }
+
+        private static void Deft_Stop(object sender, EventArgs args)
+        {
+            cancellationTokenSource.Cancel();
+            Deft.StopEvent -= Deft_Stop;
+        }
+
 
         public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
             string methodRoute,
@@ -77,14 +92,14 @@ namespace Deft
             };
             sentMethods.Add(deftSentMethod.MethodIndex, deftSentMethod);
 
-            Task.Delay(DeftConfig.MethodTimeoutMs).ContinueWith(t =>
+            Task.Delay(DeftConfig.MethodTimeoutMs, cancellationTokenSource.Token).ContinueWith(t =>
             {
                 if (!deftSentMethod.ResponseReceived)
                 {
                     Logger.LogError($"Method (index: {deftSentMethod.MethodIndex}, route: {deftSentMethod.MethodRoute}) has timed out");
                     CallbackSentMethod(deftSentMethod.MethodIndex, ResponseStatusCode.Timeout, null, null);
                 }
-            });
+            }, TaskContinuationOptions.NotOnCanceled);
 
 
             PacketBuilder.SendMethod(connection.Connection, deftMethod);
