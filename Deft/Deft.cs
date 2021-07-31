@@ -1,0 +1,39 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Deft
+{
+    public static class Deft
+    {
+        private static bool stopped = false;
+
+        internal static EventHandler StopEvent;
+
+        static Deft()
+        {
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+        }
+
+        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            Stop();
+        }
+
+        public static void Stop()
+        {
+            if (stopped)
+            {
+                Logger.LogWarning("Trying to stop Deft twice, no need to do that");
+                return;
+            }
+
+            stopped = true;
+
+            if (StopEvent != null)
+                StopEvent.Invoke(null, null);
+        }
+
+
+    }
+}

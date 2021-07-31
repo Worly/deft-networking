@@ -2,6 +2,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Deft
@@ -11,7 +12,7 @@ namespace Deft
         public string ConnectionIdentifier { get; private set; }
         private TcpClient tcpClient;
         private NetworkStream dataStream;
-        
+
         internal ClientListener OwnerClientListener { get; set; }
         internal DeftConnectionOwner Owner { get; set; }
         internal bool HandshakeSuccessful { get; set; } = false;
@@ -24,6 +25,8 @@ namespace Deft
         /// OnClientIdentified(int myClientId)
         /// </summary>
         internal Action<int> OnClientIdentified;
+
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         internal DeftConnection(string connectionIdentifier)
         {
@@ -48,7 +51,7 @@ namespace Deft
 
             RemoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
 
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            Deft.StopEvent += Deft_Stop;
 
             Logger.LogDebug("Established TCP connection to " + RemoteEndPoint);
 
@@ -57,7 +60,9 @@ namespace Deft
 
         public void CloseConnection()
         {
-            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+            Deft.StopEvent -= Deft_Stop;
+
+            cancellationTokenSource.Cancel();
 
             if (tcpClient != null && tcpClient.Connected)
             {
@@ -72,7 +77,7 @@ namespace Deft
                 this.Owner.OnDisconnectedInternal();
         }
 
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private void Deft_Stop(object sender, EventArgs e)
         {
             CloseConnection();
         }
@@ -195,7 +200,8 @@ namespace Deft
 
         internal void StartHandshake()
         {
-            Task.Delay(DeftConfig.HandshakeTimeoutMs).ContinueWith(t => CheckHandshakeTimeout());
+            Task.Delay(DeftConfig.HandshakeTimeoutMs, cancellationTokenSource.Token)
+                .ContinueWith(t => CheckHandshakeTimeout(), TaskContinuationOptions.NotOnCanceled);
             PacketBuilder.SendBeginHandshake(this);
         }
 
