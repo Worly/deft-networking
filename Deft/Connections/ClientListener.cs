@@ -117,7 +117,7 @@ namespace Deft
         internal override void ReceivedIdToken(DeftConnection connection, string idToken)
         {
             var client = clients.FirstOrDefault(o => o.idToken == idToken);
-            if (client == null)
+            if (client == null || client.IsConnected)
             {
                 client = new T();
                 clients.Add(client);
