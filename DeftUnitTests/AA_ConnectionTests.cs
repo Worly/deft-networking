@@ -6,11 +6,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using FluentAssertions;
+using DeftUnitTests.Utils;
 
 namespace DeftUnitTests
 {
     [TestClass]
-    public class ConnectionTests
+    public class AA_ConnectionTests
     {
         [TestMethod]
         public async Task WhenUsingIPEndPoint_ShouldConnect()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace Deft
 {
@@ -9,6 +10,7 @@ namespace Deft
         private static bool stopped = false;
 
         internal static EventHandler StopEvent;
+        internal static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource(); 
 
         static Deft()
         {
@@ -28,12 +30,14 @@ namespace Deft
                 return;
             }
 
+            Logger.LogInfo("Called Deft.Stop(), stopping all tasks!");
+
             stopped = true;
+
+            CancellationTokenSource.Cancel();
 
             if (StopEvent != null)
                 StopEvent.Invoke(null, null);
         }
-
-
     }
 }

@@ -13,9 +13,9 @@ using System.Threading.Tasks;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class MethodTests
+    public class AD_MethodTests
     {
-        static MethodTests()
+        static AD_MethodTests()
         {
             DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("/", (from, req) =>
             {
