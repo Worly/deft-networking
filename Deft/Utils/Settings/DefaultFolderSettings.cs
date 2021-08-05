@@ -1,14 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Deft.Utils.Settings;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
-namespace Deft.Utils
+namespace Deft.Utils.Settings
 {
-    internal static class Settings
+    internal class DefaultFolderSettings : ISettings
     {
-        private static string GetFolderPath()
+        private string GetFolderPath()
         {
             string applicationName = DeftConfig.ApplicationName;
             if (applicationName == null)
@@ -24,12 +25,12 @@ namespace Deft.Utils
             return string.Format(@"{0}\{1}\", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), applicationName);
         }
 
-        public static string GetSettingsPath()
+        private string GetSettingsPath()
         {
             return GetFolderPath() + "settings.json";
         }
 
-        private static Dictionary<string, string> LoadSettings()
+        private Dictionary<string, string> LoadSettings()
         {
             try
             {
@@ -51,7 +52,7 @@ namespace Deft.Utils
             }
         }
 
-        private static void SaveSettings(Dictionary<string, string> settings)
+        private void SaveSettings(Dictionary<string, string> settings)
         {
             try
             {
@@ -68,13 +69,13 @@ namespace Deft.Utils
             }
         }
 
-        public static bool HasKey(string key)
+        public bool HasKey(string key)
         {
             var settings = LoadSettings();
             return settings.ContainsKey(key);
         }
 
-        public static string GetValue(string key)
+        public string GetValue(string key)
         {
             var settings = LoadSettings();
             if (settings.TryGetValue(key, out string value))
@@ -83,7 +84,7 @@ namespace Deft.Utils
                 return null;
         }
 
-        public static void SetValue(string key, string value)
+        public void SetValue(string key, string value)
         {
             var settings = LoadSettings();
             settings[key] = value;
