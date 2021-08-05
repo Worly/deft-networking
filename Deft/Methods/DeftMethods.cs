@@ -15,20 +15,6 @@ namespace Deft
 
         private static readonly Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
 
-        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-
-        static DeftMethods()
-        {
-            Deft.StopEvent += Deft_Stop;
-        }
-
-        private static void Deft_Stop(object sender, EventArgs args)
-        {
-            cancellationTokenSource.Cancel();
-            Deft.StopEvent -= Deft_Stop;
-        }
-
-
         public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
             string methodRoute,
             TBody body, Dictionary<string, string> headers = null,
@@ -92,7 +78,7 @@ namespace Deft
             };
             sentMethods.Add(deftSentMethod.MethodIndex, deftSentMethod);
 
-            Task.Delay(DeftConfig.MethodTimeoutMs, cancellationTokenSource.Token).ContinueWith(t =>
+            Task.Delay(DeftConfig.MethodTimeoutMs, Deft.CancellationTokenSource.Token).ContinueWith(t =>
             {
                 if (!deftSentMethod.ResponseReceived)
                 {

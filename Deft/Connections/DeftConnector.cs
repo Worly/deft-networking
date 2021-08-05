@@ -27,7 +27,7 @@ namespace Deft
                 throw new ArgumentNullException("connectionIdentifier");
 
             Logger.LogDebug($"Trying to connect to {ip}");
-            
+
             try
             {
                 var tcpClient = new TcpClient
@@ -37,12 +37,15 @@ namespace Deft
                 };
 
 
-                var delayTask = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds);
+                var delayTask = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
 
                 var connectTask = tcpClient.ConnectAsync(ip.Address, ip.Port);
 
                 if (await Task.WhenAny(delayTask, connectTask) == delayTask || !tcpClient.Connected)
                 {
+                    if (Deft.CancellationTokenSource.IsCancellationRequested)
+                        throw new OperationCanceledException();
+
                     throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
                 }
 
@@ -56,16 +59,20 @@ namespace Deft
                     server.Bind(connection, myClientId);
                 };
 
-                var delayTask2 = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds);
+                var delayTask2 = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
                 var handshakeCompleted = Task.Factory.StartNew(() =>
                 {
-                    while (server == null)
+                    while (server == null && !delayTask2.IsCompleted)
                         Thread.Sleep(5);
                 });
 
                 if (await Task.WhenAny(delayTask2, handshakeCompleted) == delayTask2)
                 {
                     connection.CloseConnection();
+
+                    if (Deft.CancellationTokenSource.IsCancellationRequested)
+                        throw new OperationCanceledException();
+
                     throw new FailedToConnectException("Could not connect, handshake timeout", FailedToConnectException.FailReason.HANDSHAKE_TIMEOUT, null);
                 }
 
@@ -78,6 +85,8 @@ namespace Deft
                     Logger.LogError(e.ToString());
                     throw;
                 }
+                else if (e is OperationCanceledException)
+                    throw;
                 else
                 {
                     Logger.LogError($"Could not connect, see exception: " + e.ToString());
@@ -96,7 +105,8 @@ namespace Deft
         public static async Task<T> ConnectAsync<T>(string ipOrHostName, int port, string connectionIdentifier, ConnectionSettings connectionSettings = null) where T : Server, new()
         {
             IPEndPoint ipEndPoint;
-            if (IPAddress.TryParse(ipOrHostName, out IPAddress ipAddress)) {
+            if (IPAddress.TryParse(ipOrHostName, out IPAddress ipAddress))
+            {
                 ipEndPoint = new IPEndPoint(ipAddress, port);
             }
             else

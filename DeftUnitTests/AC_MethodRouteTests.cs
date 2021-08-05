@@ -7,7 +7,7 @@ using System;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class MethodRouteTests
+    public class AC_MethodRouteTests
     {
         [TestMethod]
         public void WhenAddingSameRouteTwice_ShouldThrowInvalidOperationException()

@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class ExceptionTests
+    public class AB_ExceptionTests
     {
-        static ExceptionTests()
+        static AB_ExceptionTests()
         {
             var router = new Router();
 

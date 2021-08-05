@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class ThreadTests
+    public class AE_ThreadTests
     {
         static object _lock = new object();
         static TaskQueue responseTaskQueue = new TaskQueue();
         static TaskQueue requestTaskQueue = new TaskQueue();
 
-        static ThreadTests()
+        static AE_ThreadTests()
         {
             var router = new Router();
             router.Add<ThreadArgs, ThreadResponse>("/default", (from, req) =>

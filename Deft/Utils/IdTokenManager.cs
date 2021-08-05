@@ -10,15 +10,15 @@ namespace Deft.Utils
         public static string GetIdToken(string connectionIdentifier)
         {
             var idToken = "";
-            if (Settings.HasKey(connectionIdentifier + KEY_SUFIX))
-                idToken = Settings.GetValue(connectionIdentifier + KEY_SUFIX);
+            if (DeftConfig.Settings.HasKey(connectionIdentifier + KEY_SUFIX))
+                idToken = DeftConfig.Settings.GetValue(connectionIdentifier + KEY_SUFIX);
 
             return idToken;
         }
 
         public static void SaveIdToken(string connectionIdentifier, string idToken)
         {
-            Settings.SetValue(connectionIdentifier + KEY_SUFIX, idToken);
+            DeftConfig.Settings.SetValue(connectionIdentifier + KEY_SUFIX, idToken);
         }
 
         public static string GenerateIdToken()

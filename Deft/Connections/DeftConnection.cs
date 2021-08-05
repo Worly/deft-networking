@@ -27,6 +27,7 @@ namespace Deft
         internal Action<int> OnClientIdentified;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private bool closingConnection = false;
 
         internal DeftConnection(string connectionIdentifier)
         {
@@ -61,6 +62,11 @@ namespace Deft
         public void CloseConnection()
         {
             Deft.StopEvent -= Deft_Stop;
+
+            if (closingConnection)
+                return;
+
+            closingConnection = true;
 
             cancellationTokenSource.Cancel();
 
