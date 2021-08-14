@@ -29,12 +29,11 @@ namespace Deft
             {
                 var tcpClient = new TcpClient();
 
-
                 var delayTask = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
 
                 var connectTask = tcpClient.ConnectAsync(ip.Address, ip.Port);
 
-                if (await Task.WhenAny(delayTask, connectTask) == delayTask || !tcpClient.Connected)
+                if (await Task.WhenAny(delayTask, connectTask) == delayTask)
                 {
                     Logger.LogDebug("CancelationRequested? " + Deft.CancellationTokenSource.IsCancellationRequested);
                     Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
