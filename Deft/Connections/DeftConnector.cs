@@ -36,8 +36,7 @@ namespace Deft
 
                 if (await Task.WhenAny(delayTask, connectTask) == delayTask || !tcpClient.Connected)
                 {
-                    if (Deft.CancellationTokenSource.IsCancellationRequested)
-                        throw new OperationCanceledException();
+                    Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                     throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
                 }
@@ -63,8 +62,7 @@ namespace Deft
                 {
                     connection.CloseConnection();
 
-                    if (Deft.CancellationTokenSource.IsCancellationRequested)
-                        throw new OperationCanceledException();
+                    Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                     throw new FailedToConnectException("Could not connect, handshake timeout", FailedToConnectException.FailReason.HANDSHAKE_TIMEOUT, null);
                 }
