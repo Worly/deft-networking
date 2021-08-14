@@ -21,6 +21,9 @@ namespace Deft
 
         private byte[] recieveBuffer;
 
+        private SmartByteBuffer currentPacketByteBuffer = new SmartByteBuffer();
+        private int? currentPacketLength = null;
+
         /// <summary>
         /// OnClientIdentified(int myClientId)
         /// </summary>
@@ -121,7 +124,7 @@ namespace Deft
                     return;
                 }
 
-                HandleData(recieveBuffer, size);
+                ReassembleAndHandle(recieveBuffer, size);
 
                 BeginRead();
             }
@@ -134,27 +137,52 @@ namespace Deft
             }
         }
 
-        void HandleData(byte[] data, int size)
+        void ReassembleAndHandle(byte[] data, int size)
         {
+            Logger.LogDebug($"[TCP] Received packet from: {this}, size: {size}, data: " + data.ToHexString());
+
             var byteBuffer = new ByteBuffer(size);
             byteBuffer.WriteBytes(data, size);
             byteBuffer.SetReadPosition(0);
 
-            while (byteBuffer.Length() > 4)
+            while (byteBuffer.Length() > 0)
             {
-                var packetLength = byteBuffer.ReadInteger();
-                if (packetLength <= 0 || packetLength > byteBuffer.Length()) // this should not happen exiting...
-                    return;
+                if (this.currentPacketLength == null)
+                {
+                    this.currentPacketLength = byteBuffer.ReadInteger();
+                    if (this.currentPacketLength <= 0)
+                    {
+                        Logger.LogError("[TCP] packet length is less or equal to zero!!");
+                        return;
+                    }
+                }
 
-                var packet = byteBuffer.ReadBytes(packetLength);
+                var readSize = this.currentPacketLength.Value - this.currentPacketByteBuffer.GetSize();
+                if (byteBuffer.Length() < readSize)
+                    readSize = byteBuffer.Length();
 
-                DeftThread.ExecuteOnDeftThread(() => HandlePackage(packet));
+                this.currentPacketByteBuffer.WriteBytes(byteBuffer.ReadBytes(readSize));
+
+                if (currentPacketByteBuffer.GetSize() == this.currentPacketLength)
+                {
+                    var packet = currentPacketByteBuffer.GetBytes();
+
+                    Logger.LogDebug("[TCP] Data completed!");
+                    DeftThread.ExecuteOnDeftThread(() => HandlePackage(packet));
+
+                    this.currentPacketLength = null;
+                    this.currentPacketByteBuffer.Reset();
+                }
+                else
+                    Logger.LogDebug("[TCP] Data is split in multiple packets, waiting for next one...");
             }
         }
 
 
         void HandlePackage(byte[] data)
         {
+            Logger.LogDebug("[TCP] Handling packet " + data.ToHexString());
+
             ByteBuffer buffer = new ByteBuffer(data);
             byte toInvoke = buffer.ReadByte();
 
@@ -164,9 +192,9 @@ namespace Deft
                 return;
             }
 
-            var DeftPacket = (DeftPacket)toInvoke;
+            var deftPacket = (DeftPacket)toInvoke;
 
-            PacketHandler.Handle(this, DeftPacket, buffer);
+            PacketHandler.Handle(this, deftPacket, buffer);
         }
 
         /// <summary>

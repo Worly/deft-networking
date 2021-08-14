@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -383,6 +384,63 @@ namespace DeftUnitTests
 
             response.Ok.Should().BeFalse();
             response.StatusCode.Should().Be(ResponseStatusCode.Unauthorized);
+        }
+
+        [TestMethod]
+        public async Task WhenSendingAlot_ShouldWorkCorrectly()
+        {
+            var port = 4011;
+            var clientListener = new ClientListener(port);
+
+            var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
+
+            uint count = 1000;
+            uint okCount = 0;
+            uint notOkCount = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                server.SendMethod<SecondTestArgs, SecondTestResponse>("/SecondTestArgs", new SecondTestArgs() { FloatNumber = 10, Message = "aa" }, null, r =>
+                {
+                    if (r.Ok)
+                        okCount++;
+                    else
+                        notOkCount++;
+                });
+            }
+
+            await TaskUtils.WaitFor(() => okCount + notOkCount >= count);
+
+            notOkCount.Should().Be(0);
+            okCount.Should().Be(count);
+        }
+
+        [TestMethod]
+        public async Task WhenSendingLongMessage_ShouldWorkCorrectly()
+        {
+            var port = 4012;
+            var clientListener = new ClientListener(port);
+
+            var messageBuilder = new StringBuilder();
+            for (int i = 0; i < 10000; i++)
+                messageBuilder.Append("-message text-");
+
+            var args = new SecondTestArgs()
+            {
+                FloatNumber = 1,
+                Message = messageBuilder.ToString()
+            };
+
+            var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
+
+            DeftResponse<SecondTestResponse> response = null;
+
+            server.SendMethod<SecondTestArgs, SecondTestResponse>("/SecondTestArgs", args, null, r => response = r);
+
+            await TaskUtils.WaitFor(() => response != null);
+
+            response.Ok.Should().BeTrue();
+            response.Body.Message.Should().Be(args.Message + " hello");
         }
     }
 }

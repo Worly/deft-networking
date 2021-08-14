@@ -15,7 +15,20 @@ namespace Deft
 
         private static readonly Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
 
+
         public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
+            string methodRoute,
+            TBody body, Dictionary<string, string> headers = null,
+            Action<DeftResponse<TResponse>> onResponseCallback = null,
+            ThreadOptions threadOptions = ThreadOptions.Default)
+        {
+            if (methodRoute == null)
+                throw new ArgumentNullException("methodRoute");
+
+            DeftThread.ExecuteOnDeftThread(() => connection.SendMethodInternal<TBody, TResponse>(methodRoute, body, headers, onResponseCallback, threadOptions));
+        }
+
+        private static void SendMethodInternal<TBody, TResponse>(this DeftConnectionOwner connection,
             string methodRoute,
             TBody body, Dictionary<string, string> headers = null,
             Action<DeftResponse<TResponse>> onResponseCallback = null,
