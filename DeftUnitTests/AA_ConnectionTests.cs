@@ -62,10 +62,7 @@ namespace DeftUnitTests
 
             var clientListener = new ClientListener(port);
 
-            Func<Task> action = () => DeftConnector.ConnectAsync<Server>("localhost", wrongPort, "Server", new ConnectionSettings()
-            {
-                ConnectionTimeoutMilliseconds = 100
-            });
+            Func<Task> action = () => DeftConnector.ConnectAsync<Server>("localhost", wrongPort, "Server", 100);
 
             action.Should()
                 .Throw<FailedToConnectException>();
@@ -78,10 +75,7 @@ namespace DeftUnitTests
 
             var clientListener = new ClientListener(port);
 
-            Func<Task> action = () => DeftConnector.ConnectAsync<Server>("thisHostDoesNotExist", port, "Server", new ConnectionSettings()
-            {
-                ConnectionTimeoutMilliseconds = 100
-            });
+            Func<Task> action = () => DeftConnector.ConnectAsync<Server>("thisHostDoesNotExist", port, "Server", 100);
 
             action.Should()
                 .Throw<FailedToConnectException>()

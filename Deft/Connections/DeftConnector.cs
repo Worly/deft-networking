@@ -16,11 +16,8 @@ namespace Deft
         /// <param name="connectionIdentifier">Connection identifier (ex. 'MasterServer', 'LoggingServer'...)</param>
         /// <param name="connectionSettings">Connection settings used for this connection</param>
         /// <returns>Returns connected Server ready for communication</returns>
-        public static async Task<T> ConnectAsync<T>(IPEndPoint ip, string connectionIdentifier, ConnectionSettings connectionSettings = null) where T : Server, new()
+        public static async Task<T> ConnectAsync<T>(IPEndPoint ip, string connectionIdentifier, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
         {
-            if (connectionSettings == null)
-                connectionSettings = new ConnectionSettings();
-
             if (ip == null)
                 throw new ArgumentNullException("ip");
             if (connectionIdentifier == null)
@@ -30,14 +27,10 @@ namespace Deft
 
             try
             {
-                var tcpClient = new TcpClient
-                {
-                    ReceiveBufferSize = connectionSettings.BufferSize,
-                    SendBufferSize = connectionSettings.BufferSize
-                };
+                var tcpClient = new TcpClient();
 
 
-                var delayTask = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
+                var delayTask = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
 
                 var connectTask = tcpClient.ConnectAsync(ip.Address, ip.Port);
 
@@ -59,7 +52,7 @@ namespace Deft
                     server.Bind(connection, myClientId);
                 };
 
-                var delayTask2 = Task.Delay(connectionSettings.ConnectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
+                var delayTask2 = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
                 var handshakeCompleted = Task.Factory.StartNew(() =>
                 {
                     while (server == null && !delayTask2.IsCompleted)
@@ -102,7 +95,7 @@ namespace Deft
         /// <param name="connectionIdentifier">Connection identifier (ex. 'MasterServer', 'LoggingServer'...)</param>
         /// <param name="connectionSettings">Connection settings used for this connection</param>
         /// <returns>Returns connected Server ready for communication</returns>
-        public static async Task<T> ConnectAsync<T>(string ipOrHostName, int port, string connectionIdentifier, ConnectionSettings connectionSettings = null) where T : Server, new()
+        public static async Task<T> ConnectAsync<T>(string ipOrHostName, int port, string connectionIdentifier, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
         {
             IPEndPoint ipEndPoint;
             if (IPAddress.TryParse(ipOrHostName, out IPAddress ipAddress))
@@ -148,7 +141,7 @@ namespace Deft
                 }
             }
 
-            return await ConnectAsync<T>(ipEndPoint, connectionIdentifier, connectionSettings);
+            return await ConnectAsync<T>(ipEndPoint, connectionIdentifier, connectionTimeoutMilliseconds);
         }
 
         /// <summary>
@@ -160,9 +153,9 @@ namespace Deft
         /// <param name="onConnected">Callback called when connection was successfully made</param>
         /// <param name="onFailed">Callback called when connection failed</param>
         /// <returns>Returns connected Server ready for communication</returns>
-        public static void Connect<T>(string ipOrHostName, int port, string connectionIdentifier, Action<T> onConnected, Action<Exception> onFailed, ConnectionSettings connectionSettings = null) where T : Server, new()
+        public static void Connect<T>(string ipOrHostName, int port, string connectionIdentifier, Action<T> onConnected, Action<Exception> onFailed, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
         {
-            var connectionTask = ConnectAsync<T>(ipOrHostName, port, connectionIdentifier, connectionSettings);
+            var connectionTask = ConnectAsync<T>(ipOrHostName, port, connectionIdentifier, connectionTimeoutMilliseconds);
 
             connectionTask.ContinueWith(t => onConnected(t.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
             connectionTask.ContinueWith(t => onFailed(t.Exception), TaskContinuationOptions.OnlyOnFaulted);
@@ -177,9 +170,9 @@ namespace Deft
         /// <param name="onConnected">Callback called when connection was successfully made</param>
         /// <param name="onFailed">Callback called when connection failed</param>
         /// <returns>Returns connected Server ready for communication</returns>
-        public static void Connect<T>(IPEndPoint ip, string connectionIdentifier, Action<T> onConnected, Action<Exception> onFailed, ConnectionSettings connectionSettings = null) where T : Server, new()
+        public static void Connect<T>(IPEndPoint ip, string connectionIdentifier, Action<T> onConnected, Action<Exception> onFailed, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
         {
-            var connectionTask = ConnectAsync<T>(ip, connectionIdentifier, connectionSettings);
+            var connectionTask = ConnectAsync<T>(ip, connectionIdentifier, connectionTimeoutMilliseconds);
 
             connectionTask.ContinueWith(t => onConnected(t.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
             connectionTask.ContinueWith(t => onFailed(t.Exception), TaskContinuationOptions.OnlyOnFaulted);
