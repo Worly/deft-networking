@@ -35,7 +35,6 @@ namespace Deft
 
                 if (await Task.WhenAny(delayTask, connectTask) == delayTask)
                 {
-                    Logger.LogDebug("CancelationRequested? " + Deft.CancellationTokenSource.IsCancellationRequested);
                     Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
 
                     throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
@@ -44,6 +43,7 @@ namespace Deft
                 if (!tcpClient.Connected)
                 {
                     Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+
                     throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
                 }
 
