@@ -41,6 +41,12 @@ namespace Deft
                     throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
                 }
 
+                if (!tcpClient.Connected)
+                {
+                    Deft.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+                    throw new FailedToConnectException("Could not connect, TCP timeout", FailedToConnectException.FailReason.TCP_TIMEOUT, null);
+                }
+
                 var connection = new DeftConnection(connectionIdentifier);
                 connection.Connect(tcpClient);
 
