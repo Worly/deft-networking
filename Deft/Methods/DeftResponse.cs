@@ -3,6 +3,21 @@ using System.Collections.Generic;
 
 namespace Deft
 {
+    public class DeftResponse
+    {
+        public DeftResponse(Dictionary<string, string> headers = null, ResponseStatusCode statusCode = ResponseStatusCode.OK, string bodyJSON = null)
+        {
+            this.Headers = headers;
+            this.StatusCode = statusCode;
+            this.BodyJSON = bodyJSON;
+        }
+
+        public ResponseStatusCode StatusCode { get; internal set; }
+        public bool Ok { get => (int)StatusCode < 400; }
+        public Dictionary<string, string> Headers { get; internal set; }
+        public string BodyJSON { get; internal set; }
+    }
+
     public class DeftResponse<TResponseType>
     {
         public ResponseStatusCode StatusCode { get; internal set; }

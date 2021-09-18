@@ -12,16 +12,18 @@ using System.Threading.Tasks;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class AE_ThreadTests
+    public class AD_ThreadTests
     {
-        static object _lock = new object();
-        static TaskQueue responseTaskQueue = new TaskQueue();
-        static TaskQueue requestTaskQueue = new TaskQueue();
-
-        static AE_ThreadTests()
+        private class Router : DeftRouter
         {
-            var router = new Router();
-            router.Add<ThreadArgs, ThreadResponse>("/default", (from, req) =>
+            public Router()
+            {
+                Add<ThreadArgs, ThreadResponse>("/default", Default);
+                Add<ThreadArgs, ThreadResponse>("/async", Async, ThreadOptions.ExecuteAsync);
+                Add<ThreadArgs, ThreadResponse>("/timeout", Timeout, ThreadOptions.ExecuteAsync);
+            }
+
+            private DeftResponse<ThreadResponse> Default(DeftConnectionOwner owner, DeftRequest<ThreadArgs> req)
             {
                 return new ThreadResponse()
                 {
@@ -30,33 +32,40 @@ namespace DeftUnitTests
                     IsResponseThread = Thread.CurrentThread == (DeftConfig.DefaultMethodResponseTaskQueue as TaskQueue).Thread,
                     IsRequestThread = Thread.CurrentThread == (DeftConfig.DefaultRouteHandlerTaskQueue as TaskQueue).Thread
                 };
-            });
+            }
 
-            router.Add<ThreadArgs, ThreadResponse>("/async", (from, req) =>
+            private DeftResponse<ThreadResponse> Async(DeftConnectionOwner owner, DeftRequest<ThreadArgs> req)
             {
-                _ = req.Body;
-                return DeftResponse<ThreadResponse>.From(new ThreadResponse()
+                return new ThreadResponse()
                 {
                     IsDeftThread = DeftThread.TaskQueue.Thread == Thread.CurrentThread,
                     IsPoolThread = Thread.CurrentThread.IsThreadPoolThread,
                     IsResponseThread = Thread.CurrentThread == (DeftConfig.DefaultMethodResponseTaskQueue as TaskQueue).Thread,
                     IsRequestThread = Thread.CurrentThread == (DeftConfig.DefaultRouteHandlerTaskQueue as TaskQueue).Thread
-                });
-            }, ThreadOptions.ExecuteAsync);
+                };
+            }
 
-            router.Add<ThreadArgs, ThreadResponse>("/timeout", (from, req) =>
+            private DeftResponse<ThreadResponse> Timeout(DeftConnectionOwner owner, DeftRequest<ThreadArgs> req)
             {
                 Thread.Sleep(DeftConfig.MethodTimeoutMs + 100);
                 return new ThreadResponse();
-            }, ThreadOptions.ExecuteAsync);
+            }
+        }
 
-            DeftMethods.DefaultRouter.Add("thread-tests", router);
+        static object _lock = new object();
+        static TaskQueue responseTaskQueue = new TaskQueue();
+        static TaskQueue requestTaskQueue = new TaskQueue();
+        static string MainURL = "ThreadTests/";
+
+        static AD_ThreadTests()
+        {
+            DeftMethods.DefaultRouter.Add<Router>(MainURL);
         }
 
         [TestMethod]
         public async Task WhenDefaultOptions_ShouldExecuteOnSelectedThread()
         {
-            var port = 5000;
+            var port = 6000;
             var clientListener = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
@@ -69,7 +78,7 @@ namespace DeftUnitTests
                 DeftResponse<ThreadResponse> response = null;
                 Thread responseThread = null;
 
-                server.SendMethod<ThreadArgs, ThreadResponse>("/thread-tests/default", new ThreadArgs(), null, r =>
+                server.SendMethod<ThreadArgs, ThreadResponse>(MainURL + "default", new ThreadArgs(), null, r =>
                 {
                     responseThread = Thread.CurrentThread;
                     response = r;
@@ -92,7 +101,7 @@ namespace DeftUnitTests
                 response = null;
                 responseThread = null;
 
-                server.SendMethod<ThreadArgs, ThreadResponse>("/thread-tests/default", new ThreadArgs(), null, r =>
+                server.SendMethod<ThreadArgs, ThreadResponse>(MainURL + "default", new ThreadArgs(), null, r =>
                 {
                     responseThread = Thread.CurrentThread;
                     response = r;
@@ -113,7 +122,7 @@ namespace DeftUnitTests
         [TestMethod]
         public async Task WhenAsyncOptions_ShouldExecuteOnNewThread()
         {
-            var port = 5001;
+            var port = 6001;
             var clientListener = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
@@ -121,7 +130,7 @@ namespace DeftUnitTests
             DeftResponse<ThreadResponse> response = null;
             Thread responseThread = null;
 
-            server.SendMethod<ThreadArgs, ThreadResponse>("/thread-tests/async", new ThreadArgs(), null, r =>
+            server.SendMethod<ThreadArgs, ThreadResponse>(MainURL + "async", new ThreadArgs(), null, r =>
             {
                 responseThread = Thread.CurrentThread;
                 response = r;
@@ -142,7 +151,7 @@ namespace DeftUnitTests
         [TestMethod]
         public async Task WhenTimeout_ShouldExecuteOnCorrectThread()
         {
-            var port = 5002;
+            var port = 6002;
             var clientListener = new ClientListener(port);
 
             var server = await DeftConnector.ConnectAsync<Server>("localhost", port, "Server");
@@ -155,7 +164,7 @@ namespace DeftUnitTests
                 DeftResponse<ThreadResponse> response = null;
                 Thread responseThread = null;
 
-                server.SendMethod<ThreadArgs, ThreadResponse>("/thread-tests/timeout", new ThreadArgs(), null, r =>
+                server.SendMethod<ThreadArgs, ThreadResponse>(MainURL + "timeout", new ThreadArgs(), null, r =>
                 {
                     responseThread = Thread.CurrentThread;
                     response = r;
@@ -164,6 +173,7 @@ namespace DeftUnitTests
                 TaskUtils.WaitFor(() => response != null).Wait();
 
                 response.Ok.Should().BeFalse();
+                response.StatusCode.Should().Be(ResponseStatusCode.Timeout);
                 responseThread.Should().NotBe(DeftThread.TaskQueue.Thread);
                 responseThread.Should().Be((DeftConfig.DefaultMethodResponseTaskQueue as TaskQueue).Thread);
             }

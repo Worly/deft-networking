@@ -1,89 +1,79 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Deft
 {
     internal class RouteHandler
     {
-        private Func<DeftConnectionOwner, string, string, DeftResponseDTO> handler;
-        private DeftRoute route;
-        ThreadOptions threadOptions;
-        private Router parent;
+        private Func<DeftRequest, DeftResponse> handler;
+        private ThreadOptions threadOptions;
 
-        public void Handle(DeftConnectionOwner owner, uint methodIndex, string headersJSON, string bodyJSON)
+        public async Task<DeftResponse> Handle(DeftRequest request)
         {
-            Action action = () => HandleInternal(owner, methodIndex, headersJSON, bodyJSON);
+            if (!DeftThread.IsOnDeftThread())
+                Logger.LogError("RouteHandler is not on DeftThread!");
+
+            DeftResponse response;
 
             if ((threadOptions & ThreadOptions.ExecuteAsync) != 0)
-                Task.Run(action);
+                response = await Task.Run(() => handler(request));
             else
-                DeftThread.ExecuteOnSelectedTaskQueue(action, DeftConfig.DefaultRouteHandlerTaskQueue);
+            {
+                var taskCompletionSource = new TaskCompletionSource<DeftResponse>();
+                DeftThread.ExecuteOnSelectedTaskQueue(() =>
+                {
+                    try
+                    {
+                        var result = handler(request);
+                        taskCompletionSource.SetResult(result);
+                    }
+                    catch (Exception e)
+                    {
+                        taskCompletionSource.SetException(e);
+                    }
+                }, DeftConfig.DefaultRouteHandlerTaskQueue);
+
+                response = await taskCompletionSource.Task;
+            }
+
+            if (!DeftThread.IsOnDeftThread())
+                Logger.LogError("RouteHandler is not on DeftThread after handler executed!");
+
+            return response;
         }
 
-        private void HandleInternal(DeftConnectionOwner owner, uint methodIndex, string headersJSON, string bodyJSON)
-        {
-            try
-            {
-                var result = handler(owner, headersJSON, bodyJSON);
-                DeftMethods.Respond(owner.Connection, methodIndex, result);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"An exception has been thrown while handling request on route {route}, see exception: {e}");
-                parent.HandleException(owner, methodIndex, e);
-            }
-        }
-
-        public static RouteHandler From<TBody, TResponse>(DeftRoute route, Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> handler, ThreadOptions threadOptions, Router parent)
+        public static RouteHandler From<TBody, TResponse>(Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> handler, ThreadOptions threadOptions)
         {
             return new RouteHandler()
             {
-                route = route,
                 threadOptions = threadOptions,
-                parent = parent,
-                handler = (owner, headersJSON, bodyJSON) =>
+                handler = (request) =>
                 {
                     var deftRequest = new DeftRequest<TBody>();
+                    deftRequest.Headers = request.Headers;
 
                     try
                     {
-                        if (headersJSON != null)
-                            deftRequest.Headers = JsonConvert.DeserializeObject<Dictionary<string, string>>(headersJSON);
+                        if (request.BodyJSON != null)
+                            deftRequest.Body = JsonConvert.DeserializeObject<TBody>(request.BodyJSON);
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError($"Could not deserialize header JSON to Dictionary<string, string>, JSON: {headersJSON} \n Exception: {e}");
+                        Logger.LogError($"Could not deserialize body JSON to {typeof(TBody).Name}, JSON: {request.BodyJSON} \n Exception: {e}");
                     }
 
-                    try
-                    {
-                        if (bodyJSON != null)
-                            deftRequest.Body = JsonConvert.DeserializeObject<TBody>(bodyJSON);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError($"Could not deserialize body JSON to {typeof(TBody).Name}, JSON: {bodyJSON} \n Exception: {e}");
-                    }
+                    var response = handler(request.Owner, deftRequest);
 
-                    var response = handler(owner, deftRequest);
-
-                    return new DeftResponseDTO()
+                    return new DeftResponse()
                     {
                         StatusCode = response.StatusCode,
-                        HeadersJSON = JsonConvert.SerializeObject(response.Headers),
+                        Headers = response.Headers,
                         BodyJSON = JsonConvert.SerializeObject(response.Body)
                     };
                 }
             };
         }
-    }
-
-    public enum ThreadOptions : uint
-    {
-        Default = 0,
-        ExecuteAsync = 1,
     }
 }

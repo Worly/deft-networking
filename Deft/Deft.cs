@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SimpleInjector;
+using SimpleInjector.Lifestyles;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -10,11 +12,25 @@ namespace Deft
         private static bool stopped = false;
 
         internal static EventHandler StopEvent;
-        internal static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource(); 
+        internal static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+
+        internal static Container Container { get; private set; }
 
         static Deft()
         {
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+
+            InitDependencyInjection(b => { });
+        }
+
+        public static void InitDependencyInjection(Action<ContainerBuilder> builder)
+        {
+            Container = new Container();
+
+            Container.Options.ResolveUnregisteredConcreteTypes = true;
+            Container.Options.DefaultScopedLifestyle = new AsyncScopedLifestyle();
+
+            builder.Invoke(new ContainerBuilder(Container));
         }
 
         private static void CurrentDomain_ProcessExit(object sender, EventArgs e)

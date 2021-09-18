@@ -11,8 +11,12 @@ namespace Deft
 
         readonly Queue<Action> taskQ = new Queue<Action>();
 
-        public TaskQueue()
+        private SynchronizationContext synchronizationContext;
+
+        public TaskQueue(SynchronizationContext synchronizationContext = null)
         {
+            this.synchronizationContext = synchronizationContext;
+
             Deft.StopEvent += Deft_Stop;
 
             Thread = new Thread(Consume);
@@ -41,6 +45,9 @@ namespace Deft
 
         void Consume()
         {
+            if (this.synchronizationContext != null)
+                SynchronizationContext.SetSynchronizationContext(this.synchronizationContext);
+
             while (true)
             {
                 Action task;
