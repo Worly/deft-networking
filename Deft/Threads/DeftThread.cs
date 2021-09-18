@@ -5,7 +5,7 @@ namespace Deft
 {
     public static class DeftThread
     {
-        public static TaskQueue TaskQueue { get; private set; } = new TaskQueue();
+        public static TaskQueue TaskQueue { get; private set; } = new TaskQueue(new DeftSynchronizationContext());
 
         internal static void ExecuteOnSelectedTaskQueue(Action action, ITaskQueue taskQueue)
         {
@@ -25,13 +25,18 @@ namespace Deft
             if (action == null)
                 throw new ArgumentNullException("action");
 
-            if (Thread.CurrentThread == TaskQueue.Thread)
+            if (IsOnDeftThread())
             {
                 action();
                 return;
             }
 
             TaskQueue.EnqueueTask(action);
+        }
+
+        public static bool IsOnDeftThread()
+        {
+            return Thread.CurrentThread == TaskQueue.Thread;
         }
 
         public static void Join()
@@ -42,4 +47,10 @@ namespace Deft
         }
     }
 
+
+    public enum ThreadOptions
+    {
+        Default = 0,
+        ExecuteAsync = 1,
+    }
 }

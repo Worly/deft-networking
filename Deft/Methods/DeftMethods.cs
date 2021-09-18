@@ -1,15 +1,14 @@
 ﻿using Newtonsoft.Json;
+using SimpleInjector.Lifestyles;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Deft
 {
     public static class DeftMethods
     {
-        public static Router DefaultRouter { get; private set; } = new Router();
+        public static DeftRouter DefaultRouter { get; private set; } = new DeftRouter();
 
         private static uint sendingMethodIndex = 0;
 
@@ -123,12 +122,12 @@ namespace Deft
             return t.Task;
         }
 
-        internal static void Respond(DeftConnection connection, uint methodIndex, ResponseStatusCode statusCode)
+        private static void Respond(DeftConnection connection, uint methodIndex, ResponseStatusCode statusCode)
         {
             Respond(connection, methodIndex, new DeftResponseDTO() { StatusCode = statusCode });
         }
 
-        internal static void Respond(DeftConnection connection, uint methodIndex, DeftResponseDTO responseDTO)
+        private static void Respond(DeftConnection connection, uint methodIndex, DeftResponseDTO responseDTO)
         {
             responseDTO.MethodIndex = methodIndex;
 
@@ -141,16 +140,74 @@ namespace Deft
             PacketBuilder.SendMethodResponse(connection, responseDTO);
         }
 
-        internal static void ReceivedMethod(DeftConnection connection, DeftRequestDTO requestDTO)
+        internal static async Task ReceivedMethod(DeftConnection connection, DeftRequestDTO requestDTO)
         {
             if (connection.Owner == null)
             {
-                Logger.LogError($"Could not receive method from connection without an owner, responding with {HttpStatusCode.BadRequest}");
+                Logger.LogError($"Could not receive method from connection without an owner, responding with {ResponseStatusCode.BadRequest}");
                 Respond(connection, requestDTO.MethodIndex, ResponseStatusCode.BadRequest);
                 return;
             }
 
-            DefaultRouter.Handle(connection.Owner, requestDTO.MethodIndex, DeftRoute.FromString(requestDTO.MethodRoute), requestDTO.HeadersJSON, requestDTO.BodyJSON);
+            var route = DeftRoute.FromString(requestDTO.MethodRoute);
+            Dictionary<string, string> headers = null;
+
+            try
+            {
+                if (requestDTO.HeadersJSON != null)
+                    headers = JsonConvert.DeserializeObject<Dictionary<string, string>>(requestDTO.HeadersJSON);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Could not deserialize header JSON to Dictionary<string, string>, JSON: {requestDTO.HeadersJSON} \n Exception: {e}, responding with {ResponseStatusCode.BadRequest}");
+                Respond(connection, requestDTO.MethodIndex, ResponseStatusCode.BadRequest);
+            }
+
+            if (headers == null)
+                headers = new Dictionary<string, string>();
+
+            var asyncScope = AsyncScopedLifestyle.BeginScope(Deft.Container);
+
+            var request = new DeftRequest()
+            {
+                InjectionScope = asyncScope,
+                MethodIndex = requestDTO.MethodIndex,
+                FullRoute = route,
+                Route = route,
+                BodyJSON = requestDTO.BodyJSON,
+                Headers = headers,
+                Owner = connection.Owner
+            };
+
+            try
+            {
+                var result = await DefaultRouter.Handle(request);
+                Respond(connection, request.MethodIndex, new DeftResponseDTO()
+                {
+                    MethodIndex = request.MethodIndex,
+                    BodyJSON = result.BodyJSON,
+                    HeadersJSON = JsonConvert.SerializeObject(result.Headers),
+                    StatusCode = result.StatusCode
+                });
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"There was an exception while handling request for route {request.FullRoute}, responding with InternalServerError, see exception:  " + e.ToString());
+                Respond(connection, request.MethodIndex, new DeftResponseDTO()
+                {
+                    MethodIndex = request.MethodIndex,
+                    StatusCode = ResponseStatusCode.InternalServerError,
+                    HeadersJSON = JsonConvert.SerializeObject(new Dictionary<string, string>() {
+                        { "exception-type", e.GetType().Name },
+                        { "exception-message", e.Message },
+                        { "exception-stacktrace", DeftConfig.RespondWithExceptionStackTrace ? e.StackTrace : null }
+                    })
+                });
+            }
+            finally
+            {
+                await asyncScope.DisposeAsync();
+            }
         }
 
         internal static void ReceivedResponse(DeftConnection connection, DeftResponseDTO responseDTO)

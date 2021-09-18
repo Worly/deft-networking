@@ -14,14 +14,27 @@ using System.Threading.Tasks;
 namespace DeftUnitTests
 {
     [TestClass]
-    public class AD_MethodTests
+    public class AB_MethodTests
     {
-        static AD_MethodTests()
+        private class FirstRouter : DeftRouter
         {
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("/", (from, req) =>
+            public FirstRouter()
             {
-                req.Body.NumberList.Sort();
+                Add<TestArgs, TestResponse>("/", Index);
+                Add<SecondTestArgs, SecondTestResponse>("secondTestArgs", SecondTest);
+                Add<TestArgs, TestResponse>("headersTest", HeadersTest);
+                Add<TestArgs, TestResponse>("testNullHeaders", NullHeadersTest);
+                Add<TestArgs, TestResponse>("testEmptyHeaders", EmptyHeadersTest, ThreadOptions.ExecuteAsync);
+                Add<TestArgs, TestResponse>("testNullBody", NullBodyTest);
+                Add<TestArgs, TestResponse>("testException", ExceptionTest);
+                Add<TestArgs, TestResponse>("nested/main", NestedTest);
+                Add<NestedRouter>("nested");
+                Add<TestArgs, TestResponse>("timeoutTest", TimeoutTest);
+                Add<SecondClient, TestArgs, TestResponse>("clientTypeTest", ClientTypeTest);
+            }
 
+            private DeftResponse<TestResponse> Index(DeftConnectionOwner from, DeftRequest<TestArgs> req)
+            {
                 return DeftResponse<TestResponse>.From(new TestResponse()
                 {
                     DatePlusOneDay = req.Body.Date.AddDays(1),
@@ -29,18 +42,18 @@ namespace DeftUnitTests
                     NumberTimesTwo = req.Body.Number * 2,
                     SortedNumberList = req.Body.NumberList
                 }).WithHeader("route", "/");
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<SecondTestArgs, SecondTestResponse>("/secondTestArgs", (from, req) =>
+            private DeftResponse<SecondTestResponse> SecondTest(DeftConnectionOwner from, DeftRequest<SecondTestArgs> req)
             {
                 return new SecondTestResponse()
                 {
                     Message = req.Body.Message + " hello",
                     FloatNumberTimesTwo = req.Body.FloatNumber * 2
                 };
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("headersTest", (from, req) =>
+            private DeftResponse<TestResponse> HeadersTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 return DeftResponse<TestResponse>
                     .From(new TestResponse() { })
@@ -48,69 +61,79 @@ namespace DeftUnitTests
                     .WithHeader("header2", "header2")
                     .WithHeader("sentHeader", req.Headers["sentHeader"] + " hello")
                     .WithStatusCode(ResponseStatusCode.Unauthorized);
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("testNullHeaders", (from, req) =>
+            private DeftResponse<TestResponse> NullHeadersTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 return DeftResponse<TestResponse>
                     .From(new TestResponse())
-                    .WithStatusCode(req.Headers == null ? ResponseStatusCode.OK : ResponseStatusCode.BadRequest);
-            });
+                    .WithStatusCode(req.Headers.Count == 0 ? ResponseStatusCode.OK : ResponseStatusCode.BadRequest);
+            }
 
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("testEmptyHeaders", (from, req) =>
+            private DeftResponse<TestResponse> EmptyHeadersTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 return DeftResponse<TestResponse>
                     .From(new TestResponse(), new Dictionary<string, string>())
                     .WithStatusCode(req.Headers.Keys.Count() == 0 ? ResponseStatusCode.OK : ResponseStatusCode.BadRequest);
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("testNullBody", (from, req) =>
+            private DeftResponse<TestResponse> NullBodyTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 return DeftResponse<TestResponse>
                     .From(null)
                     .WithStatusCode(req.Body == null ? ResponseStatusCode.OK : ResponseStatusCode.BadRequest);
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("testException", (from, req) =>
+            private DeftResponse<TestResponse> ExceptionTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 throw new NotImplementedException("This method was not implemented on purpose for testing");
-            });
+            }
 
-            var nestedRouter = new Router();
-            nestedRouter.Add<TestArgs, TestResponse>("route", (from, req) =>
+            private DeftResponse<TestResponse> NestedTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
-                _ = req.Body;
-                return DeftResponse<TestResponse>.From(new TestResponse())
-                .WithHeader("route", "/nested/route");
-            });
-
-            DeftMethods.DefaultRouter.Add("nested", nestedRouter);
-
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("nested/main", (from, req) =>
-            {
-                _ = req.Body;
                 return DeftResponse<TestResponse>.From(new TestResponse())
                 .WithHeader("route", "/nested/main");
-            });
+            }
 
-            nestedRouter.Add<TestArgs, TestResponse>("/", (from, req) =>
-            {
-                _ = req.Body;
-                return DeftResponse<TestResponse>.From(new TestResponse())
-                .WithHeader("route", "/nested");
-            });
-
-            DeftMethods.DefaultRouter.Add<TestArgs, TestResponse>("timeoutTest", (from, req) =>
+            private DeftResponse<TestResponse> TimeoutTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
             {
                 Thread.Sleep(DeftConfig.MethodTimeoutMs + 500);
                 return new TestResponse() { };
-            });
+            }
 
-            DeftMethods.DefaultRouter.Add<SecondClient, TestArgs, TestResponse>("clientTypeTest", (from, req) =>
+            private DeftResponse<TestResponse> ClientTypeTest(SecondClient from, DeftRequest<TestArgs> req)
             {
                 return new TestResponse() { };
-            });
+            }
         }
+
+        private class NestedRouter : DeftRouter
+        {
+            public NestedRouter()
+            {
+                Add<TestArgs, TestResponse>("route", RouteTest);
+                Add<TestArgs, TestResponse>("/", Index);
+            }
+
+            private DeftResponse<TestResponse> RouteTest(DeftConnectionOwner from, DeftRequest<TestArgs> req)
+            {
+                return DeftResponse<TestResponse>.From(new TestResponse())
+                    .WithHeader("route", "/nested/route");
+            }
+
+            private DeftResponse<TestResponse> Index(DeftConnectionOwner from, DeftRequest<TestArgs> req)
+            {
+                return DeftResponse<TestResponse>.From(new TestResponse())
+                    .WithHeader("route", "/nested");
+            }
+        }
+
+        static AB_MethodTests()
+        {
+            DeftMethods.DefaultRouter.Add<FirstRouter>("MethodTests");
+        }
+
+        static string MainURL = "MethodTests/";
 
         [TestMethod]
         public async Task WhenMissingRouteIsTargeted_ShouldReturnNotFound()
@@ -130,7 +153,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("/", args, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/", args, null, r =>
             {
                 response = r;
             });
@@ -146,7 +169,7 @@ namespace DeftUnitTests
 
             response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("thisRouteDoesNotExist", args, null, r => response = r);
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "thisRouteDoesNotExist", args, null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
 
@@ -165,7 +188,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("headersTest", new TestArgs(), new Dictionary<string, string>() {
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "headersTest", new TestArgs(), new Dictionary<string, string>() {
                 { "sentHeader", "sentValue" }
             }, r =>
             {
@@ -181,7 +204,7 @@ namespace DeftUnitTests
         }
 
         [TestMethod]
-        public async Task WhenNullHeadersAreSent_ShouldReceiveNullHeaders()
+        public async Task WhenNullHeadersAreSent_ShouldReceiveEmptyHeaders()
         {
             var port = 4002;
             var clientListener = new ClientListener(port);
@@ -190,7 +213,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("testNullHeaders", new TestArgs(), null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "testNullHeaders", new TestArgs(), null, r =>
             {
                 response = r;
             });
@@ -211,7 +234,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("testEmptyHeaders", new TestArgs(), new Dictionary<string, string>(), r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "testEmptyHeaders", new TestArgs(), new Dictionary<string, string>(), r =>
             {
                 response = r;
             });
@@ -232,7 +255,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("testNullBody", null, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "testNullBody", null, null, r =>
             {
                 response = r;
             });
@@ -253,7 +276,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("testException", null, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "testException", null, null, r =>
             {
                 response = r;
             });
@@ -277,7 +300,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("/nested/route", null, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/nested/route", null, null, r =>
             {
                 response = r;
             });
@@ -289,7 +312,7 @@ namespace DeftUnitTests
 
 
             response = null;
-            server.SendMethod<TestArgs, TestResponse>("/nested", null, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/nested", null, null, r =>
             {
                 response = r;
             });
@@ -301,7 +324,7 @@ namespace DeftUnitTests
 
 
             response = null;
-            server.SendMethod<TestArgs, TestResponse>("/nested/main", null, null, r =>
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/nested/main", null, null, r =>
             {
                 response = r;
             });
@@ -326,7 +349,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("/", new TestArgs(), null, r => response = r);
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/", new TestArgs(), null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
 
@@ -337,6 +360,7 @@ namespace DeftUnitTests
         [TestMethod]
         public async Task WhenResponseNotComing_ShouldRespondWithTimeout()
         {
+            var normalTimeoutMs = DeftConfig.MethodTimeoutMs;
             DeftConfig.MethodTimeoutMs = 200;
 
             var port = 4008;
@@ -346,9 +370,11 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            server.SendMethod<TestArgs, TestResponse>("/timeoutTest", new TestArgs(), null, r => response = r);
+            server.SendMethod<TestArgs, TestResponse>(MainURL + "/timeoutTest", new TestArgs(), null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
+
+            DeftConfig.MethodTimeoutMs = normalTimeoutMs;
 
             response.Ok.Should().BeFalse();
             response.StatusCode.Should().Be(ResponseStatusCode.Timeout);
@@ -368,7 +394,7 @@ namespace DeftUnitTests
 
             DeftResponse<TestResponse> response = null;
 
-            serverAsSecond.SendMethod<TestArgs, TestResponse>("/clientTypeTest", new TestArgs(), null, r => response = r);
+            serverAsSecond.SendMethod<TestArgs, TestResponse>(MainURL + "/clientTypeTest", new TestArgs(), null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
 
@@ -378,7 +404,7 @@ namespace DeftUnitTests
 
             response = null;
 
-            serverAsFirst.SendMethod<TestArgs, TestResponse>("/clientTypeTest", new TestArgs(), null, r => response = r);
+            serverAsFirst.SendMethod<TestArgs, TestResponse>(MainURL + "/clientTypeTest", new TestArgs(), null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
 
@@ -400,7 +426,7 @@ namespace DeftUnitTests
 
             for (int i = 0; i < count; i++)
             {
-                server.SendMethod<SecondTestArgs, SecondTestResponse>("/SecondTestArgs", new SecondTestArgs() { FloatNumber = 10, Message = "aa" }, null, r =>
+                server.SendMethod<SecondTestArgs, SecondTestResponse>(MainURL + "/SecondTestArgs", new SecondTestArgs() { FloatNumber = 10, Message = "aa" }, null, r =>
                 {
                     if (r.Ok)
                         okCount++;
@@ -435,7 +461,7 @@ namespace DeftUnitTests
 
             DeftResponse<SecondTestResponse> response = null;
 
-            server.SendMethod<SecondTestArgs, SecondTestResponse>("/SecondTestArgs", args, null, r => response = r);
+            server.SendMethod<SecondTestArgs, SecondTestResponse>(MainURL + "/SecondTestArgs", args, null, r => response = r);
 
             await TaskUtils.WaitFor(() => response != null);
 

@@ -61,7 +61,7 @@ namespace Deft
 
             Logger.LogDebug($"Received Method (index: {requestDTO.MethodIndex}, route: {requestDTO.MethodRoute}) from {connection}, headers: {requestDTO.HeadersJSON}, body: {requestDTO.BodyJSON}");
 
-            DeftMethods.ReceivedMethod(connection, requestDTO);
+            _ = DeftMethods.ReceivedMethod(connection, requestDTO);
         }
 
         private static void ReceivedMethodResponse(DeftConnection connection, ByteBuffer byteBuffer)

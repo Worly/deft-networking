@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace Deft
 {
-    internal class DeftRoute
+    public class DeftRoute
     {
-        public List<string> Routes { get; private set; } = new List<string>();
+        internal List<string> Routes { get; private set; } = new List<string>();
 
-        public static DeftRoute FromString(string route)
+        internal static DeftRoute FromString(string route)
         {
             return new DeftRoute()
             {
