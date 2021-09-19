@@ -30,21 +30,21 @@ namespace DeftUnitTests
                 Add<TestArgs, TestResponse>("nested/main", NestedTest);
                 Add<NestedRouter>("nested");
                 Add<TestArgs, TestResponse>("timeoutTest", TimeoutTest);
-                Add<SecondClient, TestArgs, TestResponse>("clientTypeTest", ClientTypeTest);
+                AddFor<SecondClient, TestArgs, TestResponse>("clientTypeTest", ClientTypeTest);
             }
 
-            private DeftResponse<TestResponse> Index(DeftConnectionOwner from, DeftRequest<TestArgs> req)
+            private DeftResponse<TestResponse> Index(DeftConnectionOwner from, TestArgs req)
             {
                 return DeftResponse<TestResponse>.From(new TestResponse()
                 {
-                    DatePlusOneDay = req.Body.Date.AddDays(1),
-                    Message = "Hello " + req.Body.Message + " from /",
-                    NumberTimesTwo = req.Body.Number * 2,
-                    SortedNumberList = req.Body.NumberList
+                    DatePlusOneDay = req.Date.AddDays(1),
+                    Message = "Hello " + req.Message + " from /",
+                    NumberTimesTwo = req.Number * 2,
+                    SortedNumberList = req.NumberList
                 }).WithHeader("route", "/");
             }
 
-            private DeftResponse<SecondTestResponse> SecondTest(DeftConnectionOwner from, DeftRequest<SecondTestArgs> req)
+            private SecondTestResponse SecondTest(DeftConnectionOwner from, DeftRequest<SecondTestArgs> req)
             {
                 return new SecondTestResponse()
                 {
@@ -101,7 +101,7 @@ namespace DeftUnitTests
                 return new TestResponse() { };
             }
 
-            private DeftResponse<TestResponse> ClientTypeTest(SecondClient from, DeftRequest<TestArgs> req)
+            private TestResponse ClientTypeTest(SecondClient from, TestArgs req)
             {
                 return new TestResponse() { };
             }
