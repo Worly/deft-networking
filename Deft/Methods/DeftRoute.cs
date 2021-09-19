@@ -8,7 +8,7 @@ namespace Deft
     {
         internal List<string> Routes { get; private set; } = new List<string>();
 
-        internal static DeftRoute FromString(string route)
+        public static DeftRoute FromString(string route)
         {
             return new DeftRoute()
             {
