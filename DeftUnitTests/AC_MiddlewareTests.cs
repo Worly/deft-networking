@@ -15,10 +15,10 @@ namespace DeftUnitTests
         {
             public Router()
             {
-                UseMiddleware(MiddlewareOne);
-                UseMiddleware(MiddlewareTwo);
+                AddMiddleware(MiddlewareOne);
+                AddMiddleware(MiddlewareTwo);
                 Add<TestArgs, TestResponse>("/", Index);
-                Add<ExceptionRouter>("exceptionRouter");
+                AddRouter<ExceptionRouter>("exceptionRouter");
             }
 
             private async Task<DeftResponse> MiddlewareOne(DeftRequest request, Func<Task<DeftResponse>> next)
@@ -65,8 +65,8 @@ namespace DeftUnitTests
         {
             public ExceptionRouter()
             {
-                UseMiddleware(HandleExceptionMiddleware);
-                UseMiddleware(ExceptionMiddleware);
+                AddMiddleware(HandleExceptionMiddleware);
+                AddMiddleware(ExceptionMiddleware);
             }
 
             private async Task<DeftResponse> HandleExceptionMiddleware(DeftRequest request, Func<Task<DeftResponse>> next)
@@ -101,7 +101,7 @@ namespace DeftUnitTests
 
         static AC_MiddlewareTests()
         {
-            DeftMethods.DefaultRouter.Add<Router>(MainURL);
+            DeftMethods.AddRouter<Router>(MainURL);
         }
 
         [TestMethod]

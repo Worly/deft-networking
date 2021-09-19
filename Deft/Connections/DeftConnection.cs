@@ -78,7 +78,8 @@ namespace Deft
                 if (dataStream != null)
                     dataStream.Close();
 
-                tcpClient.Close();
+                if (tcpClient != null)
+                    tcpClient.Close();
                 tcpClient = null;
             }
 

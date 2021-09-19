@@ -122,7 +122,7 @@ namespace Deft
             return this;
         }
 
-        public DeftRouter UseMiddleware(MiddlewareHandler middlewareHandler)
+        public DeftRouter AddMiddleware(MiddlewareHandler middlewareHandler)
         {
             if (middlewareHandler == null)
                 throw new ArgumentNullException("middlwareHandler");
@@ -132,7 +132,7 @@ namespace Deft
             return this;
         }
 
-        public DeftRouter Add<TRouter>(string route) where TRouter : DeftRouter
+        public DeftRouter AddRouter<TRouter>(string route) where TRouter : DeftRouter
         {
             if (route == null)
                 throw new ArgumentNullException("route");

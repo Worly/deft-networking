@@ -8,12 +8,16 @@ namespace Deft
 {
     public static class DeftMethods
     {
-        public static DeftRouter DefaultRouter { get; private set; } = new DeftRouter();
+        private static DeftRouter DefaultRouter { get; set; } = new DeftRouter();
 
         private static uint sendingMethodIndex = 0;
 
         private static readonly Dictionary<uint, DeftSentMethod> sentMethods = new Dictionary<uint, DeftSentMethod>();
 
+        public static void AddRouter<TRouter>(string route) where TRouter : DeftRouter
+        {
+            DefaultRouter.AddRouter<TRouter>(route);
+        }
 
         public static void SendMethod<TBody, TResponse>(this DeftConnectionOwner connection,
             string methodRoute,

@@ -47,7 +47,7 @@ namespace DeftUnitTests
         {
             Deft.Deft.InitDependencyInjection(builder => builder.Register<ITestService, TestService>());
 
-            DeftMethods.DefaultRouter.Add<Router>("DependencyInjectionTests");
+            DeftMethods.AddRouter<Router>("DependencyInjectionTests");
         }
 
         [TestMethod]
