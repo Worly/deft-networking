@@ -59,7 +59,7 @@ namespace DeftUnitTests
 
         static AD_ThreadTests()
         {
-            DeftMethods.DefaultRouter.Add<Router>(MainURL);
+            DeftMethods.AddRouter<Router>(MainURL);
         }
 
         [TestMethod]

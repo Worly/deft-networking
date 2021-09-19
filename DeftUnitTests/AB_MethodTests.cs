@@ -28,7 +28,7 @@ namespace DeftUnitTests
                 Add<TestArgs, TestResponse>("testNullBody", NullBodyTest);
                 Add<TestArgs, TestResponse>("testException", ExceptionTest);
                 Add<TestArgs, TestResponse>("nested/main", NestedTest);
-                Add<NestedRouter>("nested");
+                AddRouter<NestedRouter>("nested");
                 Add<TestArgs, TestResponse>("timeoutTest", TimeoutTest);
                 AddFor<SecondClient, TestArgs, TestResponse>("clientTypeTest", ClientTypeTest);
             }
@@ -130,7 +130,7 @@ namespace DeftUnitTests
 
         static AB_MethodTests()
         {
-            DeftMethods.DefaultRouter.Add<FirstRouter>("MethodTests");
+            DeftMethods.AddRouter<FirstRouter>("MethodTests");
         }
 
         static string MainURL = "MethodTests/";
