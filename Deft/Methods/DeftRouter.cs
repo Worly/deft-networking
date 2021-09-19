@@ -8,17 +8,17 @@ namespace Deft
 {
     public partial class DeftRouter
     {
-        private List<MiddlewareHandler> middlewares = new List<MiddlewareHandler>();
+        private List<Func<DeftRequest, Func<Task<DeftResponse>>, Task<DeftResponse>>> middlewares = new List<Func<DeftRequest, Func<Task<DeftResponse>>, Task<DeftResponse>>>();
         private List<RouterEntry> entries = new List<RouterEntry>();
         private ThreadOptions threadOptions = ThreadOptions.Default;
 
         internal async Task<DeftResponse> Handle(DeftRequest request)
         {
-            var middlewares = new List<MiddlewareHandler>(this.middlewares);
+            var middlewares = new List<Func<DeftRequest, Func<Task<DeftResponse>>, Task<DeftResponse>>>(this.middlewares);
             return await HandleMiddleware(request, middlewares, 0);
         }
 
-        private async Task<DeftResponse> HandleMiddleware(DeftRequest request, List<MiddlewareHandler> middlewares, int index)
+        private async Task<DeftResponse> HandleMiddleware(DeftRequest request, List<Func<DeftRequest, Func<Task<DeftResponse>>, Task<DeftResponse>>> middlewares, int index)
         {
             if (index >= middlewares.Count)
                 return await HandleRoute(request);
@@ -122,7 +122,7 @@ namespace Deft
             return this;
         }
 
-        public DeftRouter AddMiddleware(MiddlewareHandler middlewareHandler)
+        public DeftRouter AddMiddleware(Func<DeftRequest, Func<Task<DeftResponse>>, Task<DeftResponse>> middlewareHandler)
         {
             if (middlewareHandler == null)
                 throw new ArgumentNullException("middlwareHandler");
@@ -157,7 +157,5 @@ namespace Deft
             public Type RouterType { get; set; }
             public RouteHandler RouteHandler { get; set; }
         }
-
-        public delegate Task<DeftResponse> MiddlewareHandler(DeftRequest request, Func<Task<DeftResponse>> next);
     }
 }
