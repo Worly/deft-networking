@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Deft
 {
-    public class DeftRouter
+    public partial class DeftRouter
     {
         private List<MiddlewareHandler> middlewares = new List<MiddlewareHandler>();
         private List<RouterEntry> entries = new List<RouterEntry>();
@@ -88,7 +88,7 @@ namespace Deft
             return this;
         }
 
-        public DeftRouter Add<TBody, TResponse>(string route, Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null)
+        private DeftRouter AddInternal<TBody, TResponse>(string route, Func<DeftConnectionOwner, DeftRequest<TBody>, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null)
         {
             if (route == null)
                 throw new ArgumentNullException("route");
@@ -106,56 +106,19 @@ namespace Deft
             return this;
         }
 
-        public DeftRouter Add<TBody, TResponse>(string route, Func<DeftConnectionOwner, TBody, TResponse> routeHandler, ThreadOptions? threadOptions = null)
+        private DeftRouter AddForInternal<TClient, TBody, TResponse>(string route, Func<TClient, DeftRequest<TBody>, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null) where TClient : DeftConnectionOwner
         {
-            if (routeHandler == null)
-                throw new ArgumentNullException("routeHandler");
+            if (routeHandler == null) throw new ArgumentNullException("routeHandler");
 
-            Add<TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body), threadOptions);
-            return this;
-        }
-
-        public DeftRouter Add<TBody, TResponse>(string route, Func<DeftConnectionOwner, TBody, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null)
-        {
-            if (routeHandler == null)
-                throw new ArgumentNullException("routeHandler");
-
-            Add<TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body), threadOptions);
-            return this;
-        }
-
-        public DeftRouter Add<TClient, TBody, TResponse>(string route, Func<TClient, DeftRequest<TBody>, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null) where TClient : DeftConnectionOwner
-        {
-            if (routeHandler == null)
-                throw new ArgumentNullException("routeHandler");
-
-            Add<TBody, TResponse>(route, (from, req) =>
+            AddInternal<TBody, TResponse>(route, (from, req) =>
             {
                 var fromCasted = from as TClient;
                 if (fromCasted == null)
-                    return DeftResponse<TResponse>.From(default(TResponse)).WithStatusCode(ResponseStatusCode.Unauthorized);
+                    return DeftResponse<TResponse>.From(ResponseStatusCode.Unauthorized);
 
                 return routeHandler(fromCasted, req);
-            }, threadOptions);
+            });
 
-            return this;
-        }
-
-        public DeftRouter Add<TClient, TBody, TResponse>(string route, Func<TClient, TBody, TResponse> routeHandler, ThreadOptions? threadOptions = null) where TClient : DeftConnectionOwner
-        {
-            if (routeHandler == null)
-                throw new ArgumentNullException("routeHandler");
-
-            Add<TClient, TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body), threadOptions);
-            return this;
-        }
-
-        public DeftRouter Add<TClient, TBody, TResponse>(string route, Func<TClient, TBody, DeftResponse<TResponse>> routeHandler, ThreadOptions? threadOptions = null) where TClient : DeftConnectionOwner
-        {
-            if (routeHandler == null)
-                throw new ArgumentNullException("routeHandler");
-
-            Add<TClient, TBody, TResponse>(route, (from, req) => routeHandler(from, req.Body), threadOptions);
             return this;
         }
 

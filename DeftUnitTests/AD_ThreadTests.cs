@@ -23,7 +23,7 @@ namespace DeftUnitTests
                 Add<ThreadArgs, ThreadResponse>("/timeout", Timeout, ThreadOptions.ExecuteAsync);
             }
 
-            private DeftResponse<ThreadResponse> Default(DeftConnectionOwner owner, DeftRequest<ThreadArgs> req)
+            private ThreadResponse Default(DeftConnectionOwner owner, ThreadArgs req)
             {
                 return new ThreadResponse()
                 {
