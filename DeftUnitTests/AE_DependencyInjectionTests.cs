@@ -45,7 +45,7 @@ namespace DeftUnitTests
 
         static AE_DependencyInjectionTests()
         {
-            Deft.Deft.InitDependencyInjection(builder => builder.Register<ITestService, TestService>());
+            Deft.Deft.InitDependencyInjection(new InjectionContainer(), builder => builder.Register<ITestService, TestService>());
 
             DeftMethods.AddRouter<Router>("DependencyInjectionTests");
         }

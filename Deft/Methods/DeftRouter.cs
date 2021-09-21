@@ -1,6 +1,4 @@
-﻿using SimpleInjector;
-using SimpleInjector.Lifestyles;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -52,7 +50,7 @@ namespace Deft
         {
             var newRequest = new DeftRequest()
             {
-                InjectionScope = request.InjectionScope,
+                ServiceResolver = request.ServiceResolver,
                 MethodIndex = request.MethodIndex,
                 Owner = request.Owner,
                 BodyJSON = request.BodyJSON,
@@ -64,7 +62,7 @@ namespace Deft
             DeftRouter router;
             try
             {
-                router = request.InjectionScope.GetInstance(entry.RouterType) as DeftRouter;
+                router = request.ServiceResolver.GetInstance(entry.RouterType) as DeftRouter;
             }
             catch (Exception e)
             {

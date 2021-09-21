@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using SimpleInjector.Lifestyles;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -170,11 +169,11 @@ namespace Deft
             if (headers == null)
                 headers = new Dictionary<string, string>();
 
-            var asyncScope = AsyncScopedLifestyle.BeginScope(Deft.Container);
+            var containerScope = Deft.Container.BeginScope();
 
             var request = new DeftRequest()
             {
-                InjectionScope = asyncScope,
+                ServiceResolver = containerScope,
                 MethodIndex = requestDTO.MethodIndex,
                 FullRoute = route,
                 Route = route,
@@ -210,7 +209,7 @@ namespace Deft
             }
             finally
             {
-                await asyncScope.DisposeAsync();
+                containerScope.EndScope();
             }
         }
 
