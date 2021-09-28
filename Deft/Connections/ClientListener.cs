@@ -43,9 +43,6 @@ namespace Deft
 
                 socket.Start();
 
-                Thread t = new Thread(ClientLoop);
-                t.Start();
-
                 BeginAccept();
 
                 Logger.LogInfo("Initialized ClientListener on port " + Port);
@@ -79,7 +76,8 @@ namespace Deft
                 if (!isOnline)
                     return;
                 TcpClient client = socket.EndAcceptTcpClient(result); // accept TCP client
-                clientQueue.Enqueue(client);
+
+                DeftThread.ExecuteOnDeftThread(() => AddClient(client));
 
                 BeginAccept();
             }
@@ -87,22 +85,6 @@ namespace Deft
             {
                 isOnline = false;
                 Logger.LogError("Could not accept TCP client, see exception: " + e.ToString());
-            }
-        }
-
-        // Accepting clients must be very quick, thats why it is immidiatly added to concurrent queue that is thread safe
-        // Then client loop extracts new players and adds them to array
-        void ClientLoop()
-        {
-            while (isOnline)
-            {
-                if (clientQueue.Count > 0)
-                {
-                    TcpClient client;
-                    if (clientQueue.TryDequeue(out client))
-                        AddClient(client);
-                }
-                Thread.Sleep(1);
             }
         }
 
