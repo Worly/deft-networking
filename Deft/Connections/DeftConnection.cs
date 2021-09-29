@@ -25,10 +25,18 @@ namespace Deft
         private SmartByteBuffer currentPacketByteBuffer = new SmartByteBuffer();
         private int? currentPacketLength = null;
 
+
+        private Action<int> onClientIdentified;
+        private int? clientId;
         /// <summary>
         /// OnClientIdentified(int myClientId)
         /// </summary>
-        internal Action<int> OnClientIdentified;
+        internal void OnClientIdentified(Action<int> callback) {
+            if (clientId.HasValue)
+                callback(clientId.Value);
+            else
+                this.onClientIdentified = callback;
+        }
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool closingConnection = false;
@@ -274,10 +282,10 @@ namespace Deft
         {
             HandshakeSuccessful = true;
             IdTokenManager.SaveIdToken(this.ConnectionIdentifier, idToken);
-            if (this.OnClientIdentified == null)
-                Logger.LogError("ClientIdentified but callback method is null, nothing will happen with this connection");
-            else
-                this.OnClientIdentified(clientId);
+
+            this.clientId = clientId;
+            if (this.onClientIdentified != null)
+                this.onClientIdentified(clientId);
         }
 
         private void CheckHandshakeTimeout()
