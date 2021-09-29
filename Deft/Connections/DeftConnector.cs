@@ -50,21 +50,22 @@ namespace Deft
                 var connection = new DeftConnection(connectionIdentifier);
                 connection.Connect(tcpClient);
 
+                var handshakeCompletedSource = new TaskCompletionSource<T>();
+                var delayTask2 = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
+
                 T server = null;
                 connection.OnClientIdentified = myClientId =>
                 {
+                    if (Deft.CancellationTokenSource.IsCancellationRequested)
+                        return;
+
                     server = new T();
                     server.Bind(connection, myClientId);
+                    handshakeCompletedSource.SetResult(server);
                 };
 
-                var delayTask2 = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
-                var handshakeCompleted = Task.Factory.StartNew(() =>
-                {
-                    while (server == null && !delayTask2.IsCompleted)
-                        Thread.Sleep(5);
-                });
 
-                if (await Task.WhenAny(delayTask2, handshakeCompleted) == delayTask2)
+                if (await Task.WhenAny(delayTask2, handshakeCompletedSource.Task) == delayTask2)
                 {
                     connection.CloseConnection();
 

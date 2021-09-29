@@ -21,6 +21,7 @@ namespace Deft
 
         private byte[] recieveBuffer;
 
+        private ByteBuffer packetLengthByteBuffer = new ByteBuffer(4);
         private SmartByteBuffer currentPacketByteBuffer = new SmartByteBuffer();
         private int? currentPacketLength = null;
 
@@ -101,7 +102,11 @@ namespace Deft
         {
             try
             {
-                dataStream.BeginRead(recieveBuffer, 0, recieveBuffer.Length, RecieveData, null);
+                var readCount = 1;
+                if (tcpClient.Available > 0)
+                    readCount = Math.Min(tcpClient.Available, recieveBuffer.Length);
+
+                dataStream.ReadAsync(recieveBuffer, 0, readCount).ContinueWith(task => RecieveData(task.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
             }
             catch (Exception e)
             {
@@ -110,15 +115,10 @@ namespace Deft
             }
         }
 
-        protected void RecieveData(IAsyncResult result)
+        protected void RecieveData(int size)
         {
             try
             {
-                if (!dataStream.CanRead)
-                    return;
-
-                int size = dataStream.EndRead(result);
-
                 if (size == 0)
                 {
                     CloseConnection();
@@ -140,7 +140,7 @@ namespace Deft
 
         void ReassembleAndHandle(byte[] data, int size)
         {
-            Logger.LogDebug($"[TCP] Received packet from: {this}, size: {size}, data: " + data.ToHexString());
+            Logger.LogDebug($"[TCP] Received packet from: {this}, size: {size}, data: " + data.ToHexString(size));
 
             var byteBuffer = new ByteBuffer(size);
             byteBuffer.WriteBytes(data, size);
@@ -150,7 +150,19 @@ namespace Deft
             {
                 if (this.currentPacketLength == null)
                 {
-                    this.currentPacketLength = byteBuffer.ReadInteger();
+                    var copyLen = Math.Min(4 - this.packetLengthByteBuffer.Count(), byteBuffer.Length());
+                    this.packetLengthByteBuffer.WriteBytes(byteBuffer.GetBuffer(), copyLen, byteBuffer.GetReadPosition());
+                    byteBuffer.SetReadPosition(byteBuffer.GetReadPosition() + copyLen);
+
+                    if (this.packetLengthByteBuffer.Count() == 4)
+                    {
+                        this.packetLengthByteBuffer.SetReadPosition(0);
+                        this.currentPacketLength = packetLengthByteBuffer.ReadInteger();
+                        this.packetLengthByteBuffer.Clear();
+                    }
+                    else
+                        return;
+
                     if (this.currentPacketLength <= 0)
                     {
                         Logger.LogError("[TCP] packet length is less or equal to zero!!");
@@ -216,6 +228,8 @@ namespace Deft
             buffer.WriteBytes(data);
 
             var array = buffer.ToArray();
+
+            Logger.LogDebug($"[TCP] Sending data to {this}: {array.ToHexString()}");
 
             dataStream.BeginWrite(array, 0, array.Length, new AsyncCallback(OnSendDataCompleted), dataStream);
         }
