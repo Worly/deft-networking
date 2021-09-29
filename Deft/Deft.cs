@@ -31,6 +31,7 @@ namespace Deft
 
         public static void Stop()
         {
+            Logger.LogWarning("Calling Stop() from " + Environment.StackTrace);
             if (CancellationTokenSource.IsCancellationRequested)
             {
                 Logger.LogWarning("Trying to stop Deft twice, no need to do that");
