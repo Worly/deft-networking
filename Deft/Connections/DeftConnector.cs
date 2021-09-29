@@ -54,7 +54,7 @@ namespace Deft
                 var delayTask2 = Task.Delay(connectionTimeoutMilliseconds, Deft.CancellationTokenSource.Token);
 
                 T server = null;
-                connection.OnClientIdentified = myClientId =>
+                connection.OnClientIdentified(myClientId =>
                 {
                     if (Deft.CancellationTokenSource.IsCancellationRequested)
                         return;
@@ -62,7 +62,7 @@ namespace Deft
                     server = new T();
                     server.Bind(connection, myClientId);
                     handshakeCompletedSource.SetResult(server);
-                };
+                });
 
 
                 if (await Task.WhenAny(delayTask2, handshakeCompletedSource.Task) == delayTask2)

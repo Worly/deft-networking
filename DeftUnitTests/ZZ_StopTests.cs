@@ -10,7 +10,7 @@ namespace DeftUnitTests
     public class ZZ_StopTests
     {
         [TestMethod]
-        public async Task ZZWhenStopped_ShouldCancelConnection()
+        public void ZZWhenStopped_ShouldCancelConnection()
         {
             var port = 9999;
 
