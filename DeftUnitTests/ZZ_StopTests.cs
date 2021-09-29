@@ -14,7 +14,7 @@ namespace DeftUnitTests
         {
             var port = 9999;
 
-            var connectionTimeoutMs = 2000;
+            var connectionTimeoutMs = 4000;
 
             Logger.LogLevel = Logger.Level.DEBUG;
 
@@ -23,9 +23,11 @@ namespace DeftUnitTests
 
             DeftConnector.Connect<Server>("localhost", port, "Server_WhenStopped_ShouldCancelConnection", s => server = s, e => exception = e, connectionTimeoutMs);
 
+            await Task.Delay(100);
+
             Deft.Deft.Stop();
 
-            await Task.Delay(connectionTimeoutMs * 2);
+            await Task.Delay(connectionTimeoutMs + 200);
 
             server.Should().BeNull();
             exception.Should().BeNull();
