@@ -32,5 +32,15 @@ namespace Deft
         public static string ApplicationName { get; set; } = null;
 
         public static ISettings Settings { get; set; } = new DefaultFolderSettings();
+
+        public static class Health
+        {
+            /// <summary>
+            /// Time that has to pass where no packet has been received to begin health check
+            /// </summary>
+            public static TimeSpan MaxQuietTime { get; set; } = TimeSpan.FromSeconds(10);
+
+            public static int HealthCheckTimeoutMs { get; set; } = 2000;
+        }
     }
 }
