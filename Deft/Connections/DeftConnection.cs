@@ -28,6 +28,14 @@ namespace Deft
 
         private Action<int> onClientIdentified;
         private int? clientId;
+
+        internal DateTime LastPacketReceivedTime { get; private set; } = DateTime.UtcNow;
+        /// <summary>
+        /// THIS SHOULD BE USED ONLY FOR TESTING!
+        /// If set to true, connection wont reply to the HealthCheck packets
+        /// </summary>
+        public bool _Test_DontReplyToHealthCheck { get; set; } = false;
+
         /// <summary>
         /// OnClientIdentified(int myClientId)
         /// </summary>
@@ -69,6 +77,8 @@ namespace Deft
 
             Logger.LogDebug("Established TCP connection to " + RemoteEndPoint);
 
+            HealthManager.Register(this);
+
             BeginRead();
         }
 
@@ -80,6 +90,8 @@ namespace Deft
                 return;
 
             closingConnection = true;
+
+            HealthManager.UnRegister(this);
 
             cancellationTokenSource.Cancel();
 
@@ -189,6 +201,8 @@ namespace Deft
                 {
                     var packet = currentPacketByteBuffer.GetBytes();
 
+                    this.LastPacketReceivedTime = DateTime.UtcNow;
+
                     Logger.LogDebug("[TCP] Data completed!");
                     DeftThread.ExecuteOnDeftThread(() => HandlePackage(packet));
 
@@ -199,7 +213,6 @@ namespace Deft
                     Logger.LogDebug("[TCP] Data is split in multiple packets, waiting for next one...");
             }
         }
-
 
         void HandlePackage(byte[] data)
         {
@@ -300,5 +313,15 @@ namespace Deft
         }
 
         #endregion
+
+        public HealthStatus GetHealthStatus()
+        {
+            return HealthManager.GetStatus(this);
+        }
+
+        public void CheckHealthStatus()
+        {
+            HealthManager.SendHealthCheck(this);
+        }
     }
 }

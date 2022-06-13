@@ -9,14 +9,7 @@ namespace Deft
 {
     public static class DeftConnector
     {
-        /// <summary>
-        /// Connects to Deft's ClientListener on server application
-        /// </summary>
-        /// <param name="ip">IP address of server running Deft with initialized ClientListener</param>
-        /// <param name="connectionIdentifier">Connection identifier (ex. 'MasterServer', 'LoggingServer'...)</param>
-        /// <param name="connectionSettings">Connection settings used for this connection</param>
-        /// <returns>Returns connected Server ready for communication</returns>
-        public static async Task<T> ConnectAsync<T>(IPEndPoint ip, string connectionIdentifier, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
+        public static async Task<T> ConnectAsyncInternal<T>(IPEndPoint ip, string connectionIdentifier, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
         {
             if (ip == null)
                 throw new ArgumentNullException("ip");
@@ -91,6 +84,34 @@ namespace Deft
                     throw new FailedToConnectException(null, FailedToConnectException.FailReason.OTHER_EXCEPTION, e);
                 }
             }
+        }
+
+        /// <summary>
+        /// Connects to Deft's ClientListener on server application
+        /// </summary>
+        /// <param name="ip">IP address of server running Deft with initialized ClientListener</param>
+        /// <param name="connectionIdentifier">Connection identifier (ex. 'MasterServer', 'LoggingServer'...)</param>
+        /// <param name="connectionSettings">Connection settings used for this connection</param>
+        /// <returns>Returns connected Server ready for communication</returns>
+        public static async Task<T> ConnectAsync<T>(IPEndPoint ip, string connectionIdentifier, int connectionTimeoutMilliseconds = 3000) where T : Server, new()
+        {
+            var taskCompletionSource = new TaskCompletionSource<T>();
+
+            DeftThread.ExecuteOnDeftThread(() =>
+            {
+                ConnectAsyncInternal<T>(ip, connectionIdentifier, connectionTimeoutMilliseconds)
+                .ContinueWith(task =>
+                {
+                    if (task.IsFaulted)
+                        taskCompletionSource.SetException(task.Exception);
+                    else if (task.IsCanceled)
+                        taskCompletionSource.SetCanceled();
+                    else
+                        taskCompletionSource.SetResult(task.Result);
+                });
+            });
+
+            return await taskCompletionSource.Task;
         }
 
         /// <summary>

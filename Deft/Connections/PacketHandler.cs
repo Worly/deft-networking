@@ -1,7 +1,6 @@
 ﻿using Deft.Utils;
 using System;
 using System.Collections.Generic;
-using System.Net;
 
 namespace Deft
 {
@@ -16,6 +15,8 @@ namespace Deft
             handlers.Add(DeftPacket.ClientIdentified, ReceivedClientIdentified);
             handlers.Add(DeftPacket.Method, ReceivedMethod);
             handlers.Add(DeftPacket.MethodResponse, ReceivedMethodResponse);
+            handlers.Add(DeftPacket.HealthCheck, RecievedHealthCheck);
+            handlers.Add(DeftPacket.HealthCheckResponse, RecievedHealthCheckResponse);
         }
 
         public static void Handle(DeftConnection DeftConnection, DeftPacket DeftPacket, ByteBuffer byteBuffer)
@@ -75,6 +76,19 @@ namespace Deft
             Logger.LogDebug($"Received MethodResponse (index: {responseDTO.MethodIndex}) from {connection}, status code: {responseDTO.StatusCode}, headers: {responseDTO.HeadersJSON}, body: {responseDTO.BodyJSON}");
 
             DeftMethods.ReceivedResponse(connection, responseDTO);
+        }
+
+        private static void RecievedHealthCheck(DeftConnection connection, ByteBuffer byteBuffer)
+        {
+            Logger.LogDebug($"Received HealthCheck from {connection}");
+            if (!connection._Test_DontReplyToHealthCheck)
+                PacketBuilder.SendHealthCheckResponse(connection);
+        }
+
+        private static void RecievedHealthCheckResponse(DeftConnection connection, ByteBuffer byteBuffer)
+        {
+            Logger.LogDebug($"Received HealthCheckResponse from {connection}");
+            HealthManager.RecieveHealthCheckResponse(connection);
         }
     }
 }

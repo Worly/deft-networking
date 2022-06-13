@@ -10,6 +10,8 @@
         IdToken,
         ClientIdentified,
         Method,
-        MethodResponse
+        MethodResponse,
+        HealthCheck,
+        HealthCheckResponse
     }
 }

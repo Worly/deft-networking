@@ -82,5 +82,27 @@ namespace Deft
 
             connection.SendData(byteBuffer.GetBuffer());
         }
+
+        public static void SendHealthCheck(DeftConnection connection)
+        {
+            var byteBuffer = new ByteBuffer(sizeof(byte));
+
+            byteBuffer.WriteByte((byte)DeftPacket.HealthCheck);
+
+            Logger.LogDebug($"Sending HealthCheck to {connection}");
+
+            connection.SendData(byteBuffer.GetBuffer());
+        }
+
+        public static void SendHealthCheckResponse(DeftConnection connection)
+        {
+            var byteBuffer = new ByteBuffer(sizeof(byte));
+
+            byteBuffer.WriteByte((byte)DeftPacket.HealthCheckResponse);
+
+            Logger.LogDebug($"Sending HealthCheckResponse to {connection}");
+
+            connection.SendData(byteBuffer.GetBuffer());
+        }
     }
 }
