@@ -60,24 +60,28 @@ namespace Deft
 
         private static void CheckHealth()
         {
+            Dictionary<DeftConnection, HealthStatus> statusesCopy;
+
             lock (statuses)
             {
-                foreach (var status in statuses.Values)
-                {
-                    // check quiet time
-                    if (DateTime.UtcNow - status.Connection.LastPacketReceivedTime > DeftConfig.Health.MaxQuietTime
-                        && status.HealthCheckSentTime == null)
-                    {
-                        SendHealthCheck(status.Connection);
-                    }
+                statusesCopy = new Dictionary<DeftConnection, HealthStatus>(statuses);
+            }
 
-                    // check timeout time
-                    if (status.HealthCheckSentTime != null
-                        && DateTime.UtcNow - status.HealthCheckSentTime > TimeSpan.FromMilliseconds(DeftConfig.Health.HealthCheckTimeoutMs))
-                    {
-                        Logger.LogInfo($"Health check failed, disconnecting {status.Connection}!");
-                        status.Connection.CloseConnection();
-                    }
+            foreach (var status in statusesCopy.Values)
+            {
+                // check quiet time
+                if (DateTime.UtcNow - status.Connection.LastPacketReceivedTime > DeftConfig.Health.MaxQuietTime
+                    && status.HealthCheckSentTime == null)
+                {
+                    SendHealthCheck(status.Connection);
+                }
+
+                // check timeout time
+                if (status.HealthCheckSentTime != null
+                    && DateTime.UtcNow - status.HealthCheckSentTime > TimeSpan.FromMilliseconds(DeftConfig.Health.HealthCheckTimeoutMs))
+                {
+                    Logger.LogInfo($"Health check failed, disconnecting {status.Connection}!");
+                    status.Connection.CloseConnection();
                 }
             }
         }
